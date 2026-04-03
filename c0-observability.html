@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customer Zero Observability</title>
+    <script type="module" src="https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js"></script>
+    <style>
+      :root {
+        --body-bg: #f3f3f3;
+        --header-card: #302783;
+        --tab: #4a3aa8;
+        --tab-active: #2f1b95;
+        --sf-blue: #00a1e0;
+        --focus-ring: 0 0 0 2px rgba(0, 161, 224, 0.45);
+        --ink: #ffffff;
+        --ink-soft: rgba(255, 255, 255, 0.88);
+        --header-scale: 1.2;
+        --nav-font-size: calc(12px * var(--header-scale));
+        --header-item-height: calc(42px * var(--header-scale));
+        --pill-min-height: calc(26px * var(--header-scale));
+        --pill-pad-y: calc(7px * var(--header-scale));
+        --pill-pad-x: calc(12px * var(--header-scale));
+        --pill-radius: calc(9px * var(--header-scale));
+        --right-col-a-width: calc(56px * var(--header-scale));
+        --right-col-a-offset: calc(8px * var(--header-scale));
+        --nav-row-gap: calc(12px * var(--header-scale));
+        --jump-gap: calc(18px * var(--header-scale));
+        --viz-width: 1600px;
+        --viz-default-height: 2200px;
+        --app-top-pad: 12px;
+        --top-mask-bg: #f3f3f3;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, Arial, sans-serif;
+        background: var(--body-bg);
+        color: var(--ink);
+      }
+
+      .app {
+        width: 100%;
+        max-width: calc(var(--viz-width) + 16px);
+        margin: 0 auto;
+        padding: var(--app-top-pad) 8px 4px;
+      }
+
+      .top-mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--app-top-pad);
+        background: var(--top-mask-bg);
+        z-index: 59;
+        pointer-events: none;
+      }
+
+      .header {
+        padding: calc(8px * var(--header-scale)) calc(10px * var(--header-scale)) calc(8px * var(--header-scale));
+        background: var(--header-card);
+        border-radius: calc(12px * var(--header-scale));
+        box-shadow:
+          0 8px 20px rgba(20, 10, 60, 0.18),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+
+      .header-shell {
+        position: sticky;
+        top: var(--app-top-pad);
+        z-index: 60;
+        background: var(--body-bg);
+        padding-bottom: calc(6px * var(--header-scale));
+        backdrop-filter: blur(2px);
+      }
+
+      .top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: calc(10px * var(--header-scale));
+        margin-bottom: calc(4px * var(--header-scale));
+      }
+
+      .brand-tools {
+        display: flex;
+        align-items: center;
+        gap: calc(10px * var(--header-scale));
+        min-width: 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: calc(12px * var(--header-scale));
+        min-width: 0;
+      }
+
+      .brand .sf {
+        width: auto;
+        height: calc(62px * var(--header-scale));
+        padding: 5px;
+        object-fit: contain;
+      }
+
+      .title {
+        margin: 0;
+        font-size: calc(34px * var(--header-scale));
+        letter-spacing: 0.05em;
+        color: #fff;
+        font-weight: 500;
+        line-height: 1;
+        transform: none;
+        text-shadow:
+          0 1px 1px rgba(9, 5, 40, 0.28),
+          0 0 10px rgba(170, 197, 255, 0.12);
+      }
+
+      .right-logos {
+        display: grid;
+        grid-template-columns: var(--right-col-a-width) auto;
+        align-items: center;
+        gap: calc(10px * var(--header-scale));
+        justify-content: end;
+      }
+
+      .right-logos .ds {
+        width: calc(118px * var(--header-scale));
+        height: var(--header-item-height);
+        object-fit: contain;
+      }
+
+      .right-logos .det {
+        height: var(--header-item-height);
+        width: auto;
+        object-fit: contain;
+        justify-self: center;
+        transform: translateX(var(--right-col-a-offset));
+      }
+
+      .nav-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: var(--nav-row-gap);
+      }
+
+      .right-actions {
+        display: grid;
+        grid-template-columns: var(--right-col-a-width) auto;
+        align-items: center;
+        gap: calc(8px * var(--header-scale));
+        justify-content: end;
+        margin-left: auto;
+      }
+
+      .metric-float-panel {
+        position: absolute;
+        left: 18px;
+        top: 225px;
+        z-index: 8;
+        display: grid;
+        gap: 8px;
+        min-width: 260px;
+        min-height: 15px;
+        border: 1px solid rgba(83, 95, 129, 0.24);
+        border-radius: calc(8px * var(--header-scale));
+        background: rgba(248, 250, 255, 0.95);
+        padding: calc(10px * var(--header-scale));
+        box-shadow: 0 6px 18px rgba(42, 56, 95, 0.14);
+      }
+
+      .metric-float-title {
+        font-size: calc(12px * var(--header-scale));
+        color: rgba(39, 48, 78, 0.92);
+        letter-spacing: 0.02em;
+        font-weight: 700;
+        margin-bottom: calc(4px * var(--header-scale));
+      }
+
+      .metric-float-options {
+        display: grid;
+        gap: calc(5px * var(--header-scale));
+      }
+
+      .metric-float-option {
+        text-align: left;
+        border: 1px solid rgba(95, 107, 142, 0.2);
+        border-radius: calc(6px * var(--header-scale));
+        background: rgba(255, 255, 255, 0.9);
+        color: rgba(44, 53, 83, 0.94);
+        font-size: calc(12px * var(--header-scale));
+        line-height: 1.2;
+        padding: calc(7px * var(--header-scale)) calc(10px * var(--header-scale));
+        cursor: pointer;
+        transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+      }
+
+      .metric-float-option:hover {
+        background: rgba(245, 248, 255, 0.98);
+        border-color: rgba(95, 107, 142, 0.34);
+        transform: translateY(-1px);
+      }
+
+      .metric-float-option.is-active {
+        border-color: rgba(43, 122, 212, 0.58);
+        background: rgba(43, 122, 212, 0.14);
+        color: rgba(28, 79, 146, 0.96);
+      }
+
+      .segment-float-panel {
+        position: absolute;
+        left: 1px;
+        top: 20px;
+        z-index: 8;
+        display: grid;
+        gap: 8px;
+        min-width: 335px;
+        border: 1px solid rgba(83, 95, 129, 0.24);
+        border-radius: calc(8px * var(--header-scale));
+        background: rgba(248, 250, 255, 0.95);
+        padding: calc(10px * var(--header-scale));
+        box-shadow: 8px 8px 18px rgba(42, 56, 95, 0.14);
+      }
+
+      .segment-float-title {
+        font-size: calc(12px * var(--header-scale));
+        color: rgba(39, 48, 78, 0.92);
+        letter-spacing: 0.02em;
+        font-weight: 700;
+      }
+
+
+      .segment-float-select {
+        border: 1px solid rgba(95, 107, 142, 0.2);
+        border-radius: calc(6px * var(--header-scale));
+        background: rgba(255, 255, 255, 0.9);
+        color: rgba(44, 53, 83, 0.94);
+        font-size: calc(12px * var(--header-scale));
+        line-height: 1.2;
+        padding: calc(7px * var(--header-scale)) calc(10px * var(--header-scale));
+        cursor: pointer;
+        outline: none;
+      }
+
+      .segment-float-select:focus {
+        border-color: rgba(95, 107, 142, 0.34);
+        box-shadow: 0 0 0 2px rgba(0, 161, 224, 0.22);
+      }
+
+      .segment-float-select option {
+        color: #1d2442;
+      }
+
+      .segment-float-status {
+        font-size: calc(11px * var(--header-scale));
+        color: rgba(64, 76, 108, 0.82);
+      }
+
+
+
+      .jump-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        margin-left: var(--jump-gap);
+        margin-top: 0;
+        flex: 0 0 auto;
+      }
+
+      .jump-wrap::before {
+        content: "";
+        position: absolute;
+        left: calc(((var(--nav-row-gap) + var(--jump-gap)) / -2) - 0.5px);
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: calc(18px * var(--header-scale));
+        background: rgba(255, 255, 255, 0.26);
+      }
+
+      .jump-input {
+        width: calc(165px * var(--header-scale));
+        min-height: var(--pill-min-height);
+        border: 0;
+        border-radius: var(--pill-radius);
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-size: var(--nav-font-size);
+        line-height: 1;
+        padding: var(--pill-pad-y) calc(30px * var(--header-scale)) var(--pill-pad-y) calc(10px * var(--header-scale));
+        outline: none;
+        appearance: none;
+      }
+
+      .jump-input::-webkit-calendar-picker-indicator {
+        display: none !important;
+        -webkit-appearance: none;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .jump-input::-webkit-list-button,
+      .jump-input::-webkit-clear-button,
+      .jump-input::-webkit-search-decoration,
+      .jump-input::-webkit-search-cancel-button,
+      .jump-input::-webkit-search-results-button,
+      .jump-input::-webkit-search-results-decoration {
+        display: none !important;
+        -webkit-appearance: none;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .jump-input::-ms-expand {
+        display: none;
+      }
+
+      .jump-input[list] {
+        background-image: none !important;
+      }
+
+      .jump-input::placeholder {
+        color: rgba(255, 255, 255, 0.76);
+      }
+
+      .jump-input:focus {
+        box-shadow: 0 0 0 2px rgba(0, 161, 224, 0.22);
+      }
+
+      .jump-toggle {
+        position: absolute;
+        right: calc(6px * var(--header-scale));
+        top: 50%;
+        transform: translateY(-50%);
+        border: 0;
+        border-radius: calc(5px * var(--header-scale));
+        background: transparent;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: var(--nav-font-size);
+        font-weight: 600;
+        line-height: 1;
+        min-height: calc(18px * var(--header-scale));
+        min-width: calc(18px * var(--header-scale));
+        padding: 0;
+        cursor: pointer;
+        transition: background 140ms ease, color 140ms ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .jump-toggle:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+      }
+
+      .jump-wrap.has-value .jump-toggle {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .updates-wrap {
+        position: relative;
+        display: inline-flex;
+        transform: translateX(calc(-9px * var(--header-scale) + var(--right-col-a-offset)));
+        justify-self: center;
+      }
+
+      .updates-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: calc(26px * var(--header-scale));
+        height: calc(26px * var(--header-scale));
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        background: rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        position: relative;
+        transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+        animation: updatesBreath 2.2s ease-in-out infinite;
+      }
+
+      .updates-trigger::before {
+        content: "";
+        position: absolute;
+        inset: -2px;
+        border-radius: inherit;
+        border: 1px solid rgba(0, 161, 224, 0.62);
+        opacity: 0.5;
+        animation: updatesPulse 1.9s ease-out infinite;
+      }
+
+      .updates-trigger:hover {
+        transform: translateY(-1px);
+        background: rgba(0, 161, 224, 0.2);
+        border-color: rgba(0, 161, 224, 0.7);
+      }
+
+      .updates-trigger:hover::before {
+        opacity: 0.16;
+        animation-play-state: paused;
+      }
+
+      .updates-trigger img {
+        width: calc(16px * var(--header-scale));
+        height: calc(16px * var(--header-scale));
+        object-fit: contain;
+        filter: none;
+      }
+
+      .updates-popover {
+        position: absolute;
+        top: calc(100% + calc(6px * var(--header-scale)));
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: calc(210px * var(--header-scale));
+        display: none;
+        border-radius: calc(8px * var(--header-scale));
+        background: #3d2199;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 6px 20px rgba(20, 10, 60, 0.42);
+        padding: calc(8px * var(--header-scale));
+        z-index: 14;
+      }
+
+      .updates-wrap:hover .updates-popover,
+      .updates-wrap:focus-within .updates-popover {
+        display: grid;
+        gap: calc(5px * var(--header-scale));
+      }
+
+      .updates-popover__title {
+        font-size: var(--nav-font-size);
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .updates-popover__item {
+        font-size: calc(11px * var(--header-scale));
+        line-height: 1.25;
+        color: var(--ink-soft);
+        padding: calc(4px * var(--header-scale)) 0;
+      }
+
+      @keyframes updatesPulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.58;
+        }
+        70% {
+          transform: scale(1.32);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1.32);
+          opacity: 0;
+        }
+      }
+
+      @keyframes updatesBreath {
+        0%,
+        100% {
+          box-shadow: 0 0 0 rgba(0, 161, 224, 0);
+        }
+        50% {
+          box-shadow: 0 0 12px rgba(0, 161, 224, 0.52);
+        }
+      }
+
+      .support {
+        display: flex;
+        align-items: center;
+        gap: calc(6px * var(--header-scale));
+        font-size: var(--nav-font-size);
+        font-weight: 500;
+        line-height: 1;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+
+      .support .slack {
+        width: calc(14px * var(--header-scale));
+        height: calc(14px * var(--header-scale));
+      }
+
+      .support-link {
+        text-decoration: none;
+      }
+
+      .support-link:hover {
+        transform: translateY(-1px);
+        background: #5a49ba;
+        color: #fff;
+      }
+
+      .tab-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: calc(7px * var(--header-scale));
+        padding-left: calc(100px * var(--header-scale));
+        flex: 0 1 auto;
+      }
+
+      .tab-item {
+        position: relative;
+        display: inline-flex;
+        align-items: flex-start;
+      }
+
+      .tab-item.has-menu {
+        margin-bottom: 0;
+      }
+
+      .tab-item.has-menu::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        height: calc(8px * var(--header-scale));
+      }
+
+      .tab-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        border: 1px solid transparent;
+        border-radius: var(--pill-radius);
+        padding: var(--pill-pad-y) var(--pill-pad-x);
+        min-height: var(--pill-min-height);
+        min-width: calc(102px * var(--header-scale));
+        color: var(--ink-soft);
+        background: var(--tab);
+        font-size: var(--nav-font-size);
+        font-weight: 500;
+        line-height: 1;
+        transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease;
+      }
+
+      .support-link {
+        border: 1px solid transparent;
+        border-radius: var(--pill-radius);
+        padding: var(--pill-pad-y) var(--pill-pad-x);
+        min-height: var(--pill-min-height);
+        background: var(--tab);
+        color: var(--ink-soft);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--nav-font-size);
+        font-weight: 500;
+        line-height: 1;
+        transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease;
+      }
+
+      .tab-link:hover {
+        transform: translateY(-1px);
+        background: #5a49ba;
+        color: #fff;
+      }
+
+      .tab-link:focus-visible,
+      .tab-sublink:focus-visible,
+      .support-link:focus-visible,
+      .jump-toggle:focus-visible,
+      .jump-input:focus-visible,
+      .updates-trigger:focus-visible,
+      .metric-float-option:focus-visible,
+      .segment-float-select:focus-visible,
+      .deep-dive-btn:focus-visible,
+      .viz-loading__retry:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .tab-link.is-active {
+        background: var(--tab-active);
+        color: var(--ink);
+        border: 1px solid var(--sf-blue);
+      }
+
+      .tab-menu {
+        position: absolute;
+        top: calc(100% + calc(2px * var(--header-scale)));
+        left: 0;
+        min-width: calc(154px * var(--header-scale));
+        display: none;
+        padding: calc(6px * var(--header-scale));
+        border-radius: calc(8px * var(--header-scale));
+        background: #3d2199;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 6px 20px rgba(20, 10, 60, 0.42);
+        z-index: 12;
+      }
+
+      .has-menu:hover .tab-menu,
+      .has-menu:focus-within .tab-menu {
+        display: grid;
+        gap: calc(4px * var(--header-scale));
+      }
+
+      .tab-sublink {
+        text-decoration: none;
+        color: var(--ink-soft);
+        font-size: var(--nav-font-size);
+        line-height: 1.1;
+        border-radius: calc(6px * var(--header-scale));
+        padding: calc(6px * var(--header-scale)) calc(8px * var(--header-scale));
+        transition: background 120ms ease, color 120ms ease;
+      }
+
+      .tab-sublink:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .tab-sublink.is-active {
+        color: #fff;
+        background: rgba(0, 161, 224, 0.25);
+      }
+
+      .page {
+        display: none;
+        margin-top: 2px;
+        padding: 0;
+      }
+
+      .page.is-active {
+        display: block;
+      }
+
+      .tableau-slot {
+        width: min(100%, var(--viz-width));
+        margin: 0 auto;
+        min-height: var(--viz-default-height);
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow-x: hidden;
+        overflow-y: visible;
+        display: block;
+        border-radius: 10px;
+      }
+
+      .tableau-slot tableau-viz {
+        display: block;
+        width: 100%;
+        height: var(--viz-default-height);
+        min-height: var(--viz-default-height);
+      }
+
+      .tableau-slot .local-page-frame {
+        display: block;
+        width: 100%;
+        height: var(--viz-default-height);
+        min-height: var(--viz-default-height);
+        border: 0;
+        background: transparent;
+        border-radius: 10px;
+      }
+
+      .deep-dive-btn {
+        position: absolute;
+        left: 225px;
+        top: 168px;
+        z-index: 8;
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        border-radius: calc(7px * var(--header-scale));
+        background: rgba(47, 27, 149, 0.94);
+        color: #fff;
+        font-size: calc(11px * var(--header-scale));
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: calc(6px * var(--header-scale)) calc(10px * var(--header-scale));
+        cursor: pointer;
+        transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+      }
+
+      .deep-dive-btn:hover {
+        background: rgba(62, 39, 171, 0.96);
+        border-color: rgba(255, 255, 255, 0.55);
+        transform: translateY(-1px);
+      }
+
+      .deep-dive-btn:active,
+      .metric-float-option:active,
+      .jump-toggle:active,
+      .updates-trigger:active,
+      .viz-loading__retry:active {
+        transform: translateY(0);
+      }
+
+      .placeholder {
+        padding: 20px;
+        text-align: center;
+        color: #243041;
+        line-height: 1.5;
+        font-size: 15px;
+      }
+
+      .placeholder code {
+        color: #1a2638;
+        background: rgba(36, 58, 96, 0.12);
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .viz-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 90px;
+        background: rgba(48, 39, 131, 0.86);
+        color: #fff;
+        z-index: 4;
+        transition: opacity 240ms ease;
+      }
+
+      .viz-loading.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .viz-loading__content {
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+      }
+
+      .viz-loading__spinner {
+        width: 34px;
+        height: 34px;
+        border: 3px solid rgba(255, 255, 255, 0.28);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+
+      .viz-loading__text {
+        font-size: calc(12px * var(--header-scale));
+        color: rgba(255, 255, 255, 0.92);
+        letter-spacing: 0.03em;
+      }
+
+      .viz-loading__error {
+        display: grid;
+        justify-items: center;
+        gap: 10px;
+      }
+
+      .viz-loading__error-title {
+        font-size: calc(12px * var(--header-scale));
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .viz-loading__error-copy {
+        font-size: calc(11px * var(--header-scale));
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .viz-loading__retry {
+        border: 1px solid rgba(255, 255, 255, 0.36);
+        border-radius: calc(7px * var(--header-scale));
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        font-size: calc(11px * var(--header-scale));
+        font-weight: 600;
+        padding: calc(6px * var(--header-scale)) calc(10px * var(--header-scale));
+        cursor: pointer;
+      }
+
+      .viz-loading__retry:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      @media (max-width: 1200px) {
+        .tab-nav {
+          padding-left: calc(30px * var(--header-scale));
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-mask" aria-hidden="true"></div>
+    <div class="app">
+      <div class="header-shell">
+        <header class="header">
+          <div class="top-row">
+            <div class="brand-tools">
+              <div class="brand">
+                <img class="sf" src="./sf logo.svg" alt="Salesforce" />
+                <h1 class="title">Customer Zero Observability</h1>
+              </div>
+            </div>
+            <div class="right-logos">
+              <img class="det" src="./det logo.svg" alt="DET" />
+              <img class="ds" src="./ds logo.svg" alt="Data Solutions" />
+            </div>
+          </div>
+          <div class="nav-row">
+            <nav class="tab-nav" aria-label="Dashboard tabs">
+              <div class="tab-item">
+                <a href="#agent-rubric" class="tab-link" data-tab-link data-tab-group="agent-rubric">Agent Rubric</a>
+              </div>
+              <div class="tab-item">
+                <a href="#efficacy" class="tab-link" data-tab-link data-tab-group="efficacy">Efficacy</a>
+              </div>
+              <div class="tab-item">
+                <a href="#performance" class="tab-link" data-tab-link data-tab-group="performance">Performance</a>
+              </div>
+
+              <div class="tab-item has-menu">
+                <a href="#engagement-flywheel" class="tab-link" data-tab-link data-tab-group="engagement">Engagement</a>
+                <div class="tab-menu">
+                  <a href="#engagement-flywheel" class="tab-sublink" data-tab-link data-tab-group="engagement">Flywheel</a>
+                  <a href="#engagement-key-metrics" class="tab-sublink" data-tab-link data-tab-group="engagement">Key Metrics</a>
+                  <a href="#engagement-agentblazer" class="tab-sublink" data-tab-link data-tab-group="engagement">Agentblazer</a>
+                  <a href="#engagement-ai-adoption" class="tab-sublink" data-tab-link data-tab-group="engagement">AI Adoption</a>
+                </div>
+              </div>
+
+              <div class="tab-item has-menu">
+                <a href="#business-value-biz-dev-agents" class="tab-link" data-tab-link data-tab-group="business-value">Business Value</a>
+                <div class="tab-menu">
+                  <a href="#business-value-biz-dev-agents" class="tab-sublink" data-tab-link data-tab-group="business-value">Biz Dev Agents</a>
+                  <a href="#business-value-gtm-agents" class="tab-sublink" data-tab-link data-tab-group="business-value">GTM Agents</a>
+                  <a href="#business-value-time-savings" class="tab-sublink" data-tab-link data-tab-group="business-value">Time Savings</a>
+                </div>
+              </div>
+
+              <div class="tab-item has-menu">
+                <a href="#experimentation-email-coach-api" class="tab-link" data-tab-link data-tab-group="experimentation"
+                  >Experimentation</a
+                >
+                <div class="tab-menu">
+                  <a
+                    href="#experimentation-email-coach-api"
+                    class="tab-sublink"
+                    data-tab-link
+                    data-tab-group="experimentation"
+                    >Email Coach API</a
+                  >
+                </div>
+              </div>
+
+              <div class="tab-item has-menu">
+                <a href="#innovation-lab-voice-analytics" class="tab-link" data-tab-link data-tab-group="innovation-lab"
+                  >Innovation Lab</a
+                >
+                <div class="tab-menu">
+                  <a
+                    href="#innovation-lab-voice-analytics"
+                    class="tab-sublink"
+                    data-tab-link
+                    data-tab-group="innovation-lab"
+                    >Voice Analytics</a
+                  >
+                </div>
+              </div>
+            </nav>
+            <div class="jump-wrap">
+              <label class="visually-hidden" for="dashboard-jump-input">Search dashboards</label>
+              <input
+                id="dashboard-jump-input"
+                class="jump-input"
+                data-jump-input
+                type="text"
+                list="dashboard-jump-options"
+                placeholder="Search analytical views..."
+                aria-label="Search dashboards"
+              />
+              <datalist id="dashboard-jump-options"></datalist>
+              <button type="button" class="jump-toggle" data-jump-toggle aria-label="Show suggested dashboards" title="Show suggested dashboards">
+                <span class="jump-toggle__icon" aria-hidden="true">&#9662;</span>
+              </button>
+            </div>
+            <div class="right-actions">
+              <div class="updates-wrap" aria-label="What's new">
+                <div class="updates-trigger">
+                  <img src="./updates-icon.svg" alt="What's new" />
+                </div>
+                <div class="updates-popover">
+                  <div class="updates-popover__title">What's New</div>
+                  <div class="updates-popover__item">New dashboards and KPI pages are now available.</div>
+                  <div class="updates-popover__item">Hover any tab with a menu to explore subpages.</div>
+                </div>
+              </div>
+              <a
+                class="support support-link"
+                href="https://salesforce.enterprise.slack.com/archives/C08MG429MJS"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img class="slack" src="./slack.svg" alt="" />
+                <span>Get Support</span>
+              </a>
+            </div>
+          </div>
+        </header>
+      </div>
+
+      <main>
+        <section id="agent-rubric" class="page" data-page data-embed-key="agentRubric">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="efficacy" class="page" data-page data-embed-key="efficacy">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="performance" class="page" data-page data-embed-key="performance">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="engagement-flywheel" class="page" data-page data-embed-key="engagementFlywheel">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="engagement-key-metrics" class="page" data-page data-embed-key="engagementKeyMetrics">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="engagement-agentblazer" class="page" data-page data-embed-key="engagementAgentblazer">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="engagement-ai-adoption" class="page" data-page data-embed-key="engagementAiAdoption">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="business-value-biz-dev-agents" class="page" data-page data-embed-key="businessValueBizDevAgents">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="business-value-gtm-agents" class="page" data-page data-embed-key="businessValueGtmAgents">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="business-value-time-savings" class="page" data-page data-embed-key="businessValueTimeSavings">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section
+          id="experimentation-email-coach-api"
+          class="page"
+          data-page
+          data-embed-key="experimentationEmailCoachApi"
+        >
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="innovation-lab-voice-analytics" class="page" data-page data-embed-key="innovationLabVoiceAnalytics">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // Replace these with the share/embed URLs from your internal Tableau Cloud site.
+      const tableauEmbeds = {
+        agentRubric: "https://prod-uswest-c.online.tableau.com/#/site/salesforce/views/C0EmbedTest/Dashboard1",
+        efficacy: "",
+        performance: "",
+        engagementFlywheel: "",
+        engagementKeyMetrics: "",
+        engagementAgentblazer: "",
+        engagementAiAdoption: "",
+        businessValueBizDevAgents: "",
+        businessValueGtmAgents: "",
+        businessValueTimeSavings: "",
+        experimentationEmailCoachApi: "",
+        innovationLabVoiceAnalytics: "",
+      };
+
+      const localPageEmbeds = {
+        experimentationEmailCoachApi: "./email_coach_v34.html",
+      };
+
+      // Tune these per dashboard so page scroll (not inner viz scroll) handles long content.
+      const tableauHeights = {
+        agentRubric: 2600,
+        efficacy: 2200,
+        performance: 2200,
+        engagementFlywheel: 2200,
+        engagementKeyMetrics: 2200,
+        engagementAgentblazer: 2200,
+        engagementAiAdoption: 2200,
+        businessValueBizDevAgents: 2200,
+        businessValueGtmAgents: 2200,
+        businessValueTimeSavings: 2200,
+        experimentationEmailCoachApi: 3600,
+        innovationLabVoiceAnalytics: 2200,
+      };
+
+      const tableauLoadMessages = {
+        agentRubric: "Loading Agent Rubric...",
+        efficacy: "Loading Efficacy...",
+        performance: "Loading Performance...",
+        engagementFlywheel: "Loading Engagement / Flywheel...",
+        engagementKeyMetrics: "Loading Engagement / Key Metrics...",
+        engagementAgentblazer: "Loading Engagement / Agentblazer...",
+        engagementAiAdoption: "Loading Engagement / AI Adoption...",
+        businessValueBizDevAgents: "Loading Business Value / Biz Dev Agents...",
+        businessValueGtmAgents: "Loading Business Value / GTM Agents...",
+        businessValueTimeSavings: "Loading Business Value / Time Savings...",
+        experimentationEmailCoachApi: "Loading Experimentation / Email Coach API...",
+        innovationLabVoiceAnalytics: "Loading Innovation Lab / Voice Analytics...",
+      };
+
+      const TAB_STORAGE_KEY = "c0-observability:last-tab";
+      const ENGAGEMENT_PARAM_NAME = "engagement_metric";
+      const SEGMENT_FILTER_FIELD = "Segment";
+      const SEGMENT_HELPER_SHEET = "segments_f";
+      const SEGMENT_ALL_VALUE = "__ALL__";
+      const segmentPanelPosition = { x: 1, y: 20 };
+      const metricPickerPosition = { x: 18, y: 220 };
+      const METRIC_PICKER_VERTICAL_GAP = 400;
+      const DEEP_DIVE_BUTTON_COUNT = 5;
+      const DEEP_DIVE_VERTICAL_GAP = 395;
+      const DEEP_DIVE_TARGETS = [
+        "engagement-flywheel",
+        "efficacy",
+        "performance",
+        "engagement-key-metrics",
+        "business-value-time-savings",
+      ];
+      const DEEP_DIVE_X_OFFSETS = [0, 0, 0, 0, 40];
+      const DEEP_DIVE_Y_OFFSETS = [0, 8, 8, 8, 10];
+      const engagementMetricOptions = [
+        { value: 1, label: "MAU" },
+        { value: 2, label: "Weekly Acquisition Rate" },
+        { value: 3, label: "Engagement Depth Rate" },
+        { value: 4, label: "Habit Metric" },
+        { value: 5, label: "1-Week Retention Rate" },
+      ];
+      const deepDiveConfig = {
+        agentRubric: { x: 225, y: 168, targetTab: "efficacy" },
+      };
+      const dashboardCatalog = [
+        { id: "agent-rubric", label: "Agent Rubric" },
+        { id: "efficacy", label: "Efficacy" },
+        { id: "performance", label: "Performance" },
+        { id: "engagement-flywheel", label: "Engagement / Flywheel" },
+        { id: "engagement-key-metrics", label: "Engagement / Key Metrics" },
+        { id: "engagement-agentblazer", label: "Engagement / Agentblazer" },
+        { id: "engagement-ai-adoption", label: "Engagement / AI Adoption" },
+        { id: "business-value-biz-dev-agents", label: "Business Value / Biz Dev Agents" },
+        { id: "business-value-gtm-agents", label: "Business Value / GTM Agents" },
+        { id: "business-value-time-savings", label: "Business Value / Time Savings" },
+        { id: "experimentation-email-coach-api", label: "Experimentation / Email Coach API" },
+        { id: "innovation-lab-voice-analytics", label: "Innovation Lab / Voice Analytics" },
+      ];
+
+      const pages = Array.from(document.querySelectorAll("[data-page]"));
+      const links = Array.from(document.querySelectorAll("[data-tab-link]"));
+      const jumpInput = document.querySelector("[data-jump-input]");
+      const jumpToggle = document.querySelector("[data-jump-toggle]");
+      const jumpWrap = document.querySelector(".jump-wrap");
+      const jumpOptions = document.getElementById("dashboard-jump-options");
+      let selectedEngagementMetric = 1;
+      let selectedSegmentValue = SEGMENT_ALL_VALUE;
+
+      function normalizeText(value) {
+        return (value || "").trim().toLowerCase();
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+
+      function getSheetName(sheet) {
+        return (sheet && (sheet.name || (typeof sheet.getName === "function" ? sheet.getName() : ""))) || "";
+      }
+
+      function getActiveWorksheets(vizElement) {
+        const activeSheet = vizElement?.workbook?.activeSheet;
+        if (!activeSheet) return [];
+        if (Array.isArray(activeSheet.worksheets) && activeSheet.worksheets.length) {
+          return activeSheet.worksheets;
+        }
+        return [activeSheet];
+      }
+
+      function getSummaryRows(summaryData) {
+        if (summaryData && Array.isArray(summaryData.data)) return summaryData.data;
+        if (summaryData && typeof summaryData.getData === "function") {
+          try {
+            const data = summaryData.getData();
+            return Array.isArray(data) ? data : [];
+          } catch (_err) {
+            return [];
+          }
+        }
+        return [];
+      }
+
+      function getCellText(cell) {
+        if (cell == null) return "";
+        if (typeof cell === "string" || typeof cell === "number" || typeof cell === "boolean") return String(cell).trim();
+        const candidate = cell.formattedValue ?? cell.value ?? cell.nativeValue ?? "";
+        return String(candidate).trim();
+      }
+
+      async function fetchSegmentValues(vizElement) {
+        const worksheets = getActiveWorksheets(vizElement);
+        const helper = worksheets.find((sheet) => normalizeText(getSheetName(sheet)) === normalizeText(SEGMENT_HELPER_SHEET));
+        if (!helper || typeof helper.getSummaryDataAsync !== "function") return [];
+
+        let summary;
+        try {
+          summary = await helper.getSummaryDataAsync({ maxRows: 10000 });
+        } catch (_errWithOpts) {
+          try {
+            summary = await helper.getSummaryDataAsync();
+          } catch (_errNoOpts) {
+            return [];
+          }
+        }
+
+        const rows = getSummaryRows(summary);
+        const values = rows
+          .map((row) => getCellText(Array.isArray(row) ? row[0] : row))
+          .filter((value) => value.length > 0);
+        return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+      }
+
+      async function applySegmentFilterToViz(vizElement, segmentValue) {
+        const worksheets = getActiveWorksheets(vizElement).filter(
+          (sheet) => normalizeText(getSheetName(sheet)) !== normalizeText(SEGMENT_HELPER_SHEET)
+        );
+
+        await Promise.all(
+          worksheets.map(async (sheet) => {
+            if (!sheet) return;
+            try {
+              if (segmentValue === SEGMENT_ALL_VALUE || !segmentValue) {
+                if (typeof sheet.clearFilterAsync === "function") {
+                  try {
+                    await sheet.clearFilterAsync(SEGMENT_FILTER_FIELD);
+                    return;
+                  } catch (_clearErr) {
+                    // Fall through to replace call.
+                  }
+                }
+                if (typeof sheet.applyFilterAsync === "function") {
+                  await sheet.applyFilterAsync(SEGMENT_FILTER_FIELD, [], "replace");
+                }
+                return;
+              }
+
+              if (typeof sheet.applyFilterAsync === "function") {
+                try {
+                  await sheet.applyFilterAsync(SEGMENT_FILTER_FIELD, segmentValue, "replace");
+                } catch (_singleErr) {
+                  await sheet.applyFilterAsync(SEGMENT_FILTER_FIELD, [segmentValue], "replace");
+                }
+              }
+            } catch (_err) {
+              // Some worksheets may not expose this field; ignore and continue.
+            }
+          })
+        );
+      }
+
+      function renderDeepDiveButton(slot, key) {
+        if (!deepDiveConfig[key]) return;
+        const cfg = deepDiveConfig[key];
+        Array.from({ length: DEEP_DIVE_BUTTON_COUNT }, (_unused, idx) => {
+          const deepDiveButton = document.createElement("button");
+          deepDiveButton.type = "button";
+          deepDiveButton.className = "deep-dive-btn";
+          deepDiveButton.textContent = "Deep Dive";
+          deepDiveButton.style.left = cfg.x + (DEEP_DIVE_X_OFFSETS[idx] || 0) + "px";
+          deepDiveButton.style.top = cfg.y + idx * DEEP_DIVE_VERTICAL_GAP + (DEEP_DIVE_Y_OFFSETS[idx] || 0) + "px";
+          const targetTab = DEEP_DIVE_TARGETS[idx] || cfg.targetTab;
+          deepDiveButton.addEventListener("click", () => {
+            window.location.hash = "#" + targetTab;
+          });
+          slot.appendChild(deepDiveButton);
+        });
+      }
+
+      function resolveDashboardId(value) {
+        const query = normalizeText(value);
+        if (!query) return "";
+        if (pages.some((p) => p.id === query)) return query;
+
+        const exactLabel = dashboardCatalog.find((item) => normalizeText(item.label) === query);
+        if (exactLabel) return exactLabel.id;
+
+        const prefixMatch = dashboardCatalog.find((item) => normalizeText(item.label).startsWith(query));
+        if (prefixMatch) return prefixMatch.id;
+
+        const containsMatches = dashboardCatalog.filter((item) => normalizeText(item.label).includes(query));
+        return containsMatches.length === 1 ? containsMatches[0].id : "";
+      }
+
+      function resetJumpInput() {
+        if (!jumpInput) return;
+        jumpInput.value = "";
+        jumpInput.setCustomValidity("");
+        setJumpToggleState();
+      }
+
+      function attemptJump() {
+        if (!jumpInput) return;
+        const nextId = resolveDashboardId(jumpInput.value);
+        if (!nextId) {
+          jumpInput.setCustomValidity("No matching dashboard found. Try a listed name.");
+          jumpInput.reportValidity();
+          return;
+        }
+        jumpInput.setCustomValidity("");
+        window.location.hash = "#" + nextId;
+      }
+
+      function setJumpToggleState() {
+        if (!jumpInput || !jumpToggle) return;
+        const hasValue = !!jumpInput.value.trim();
+        if (jumpWrap) jumpWrap.classList.toggle("has-value", hasValue);
+        const icon = jumpToggle.querySelector(".jump-toggle__icon");
+        if (icon) icon.innerHTML = hasValue ? "&times;" : "&#9662;";
+        const label = hasValue ? "Clear search text" : "Show suggested dashboards";
+        jumpToggle.setAttribute("aria-label", label);
+        jumpToggle.setAttribute("title", label);
+      }
+
+      function openJumpSuggestions() {
+        if (!jumpInput) return;
+        jumpInput.focus();
+        if (typeof jumpInput.showPicker === "function") {
+          try {
+            jumpInput.showPicker();
+            return;
+          } catch (_err) {
+            // Continue to fallback behavior.
+          }
+        }
+        jumpInput.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+      }
+
+      async function applyEngagementMetricToViz(vizElement) {
+        if (!vizElement) return false;
+        const stringValue = String(selectedEngagementMetric);
+        const numberValue = Number(selectedEngagementMetric);
+        try {
+          if (vizElement.workbook && typeof vizElement.workbook.changeParameterValueAsync === "function") {
+            try {
+              await vizElement.workbook.changeParameterValueAsync(ENGAGEMENT_PARAM_NAME, stringValue);
+              return true;
+            } catch (_errString) {
+              await vizElement.workbook.changeParameterValueAsync(ENGAGEMENT_PARAM_NAME, numberValue);
+              return true;
+            }
+          }
+
+          if (typeof vizElement.changeParameterValueAsync === "function") {
+            try {
+              await vizElement.changeParameterValueAsync(ENGAGEMENT_PARAM_NAME, stringValue);
+              return true;
+            } catch (_errString) {
+              await vizElement.changeParameterValueAsync(ENGAGEMENT_PARAM_NAME, numberValue);
+              return true;
+            }
+          }
+        } catch (err) {
+          console.warn("Unable to apply Tableau parameter", ENGAGEMENT_PARAM_NAME, err);
+        }
+        return false;
+      }
+
+      function renderFloatingMetricPicker(slot, key, vizElement) {
+        if (key !== "agentRubric") return;
+        const pickerConfigs = [
+          {
+            options: engagementMetricOptions.map((option) => ({
+              label: option.label,
+              value: String(option.value),
+              isInteractive: true,
+            })),
+          },
+          ...Array.from({ length: 4 }, (_unused, idx) => {
+            const start = idx * 4 + 1;
+            return {
+              options: Array.from({ length: 4 }, (__unused, offset) => {
+                const metricNum = start + offset;
+                return {
+                  label: "Metric " + metricNum,
+                  value: "dummy-" + metricNum,
+                  isInteractive: false,
+                };
+              }),
+            };
+          }),
+        ];
+
+        pickerConfigs.forEach((config, panelIndex) => {
+          const panel = document.createElement("div");
+          panel.className = "metric-float-panel";
+          panel.style.left = metricPickerPosition.x + "px";
+          panel.style.top = metricPickerPosition.y + panelIndex * METRIC_PICKER_VERTICAL_GAP + "px";
+
+          const title = document.createElement("div");
+          title.className = "metric-float-title";
+          title.textContent = "Select a Metric";
+          panel.appendChild(title);
+
+          const optionsWrap = document.createElement("div");
+          optionsWrap.className = "metric-float-options";
+
+          config.options.forEach((option, optionIndex) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "metric-float-option";
+            button.textContent = option.label;
+            button.dataset.metricValue = option.value;
+            if (panelIndex === 0) {
+              if (Number(option.value) === selectedEngagementMetric) button.classList.add("is-active");
+            } else if (optionIndex === 0) {
+              button.classList.add("is-active");
+            }
+
+            button.addEventListener("click", async () => {
+              if (panelIndex !== 0 || !option.isInteractive) {
+                optionsWrap.querySelectorAll(".metric-float-option").forEach((item) => item.classList.remove("is-active"));
+                button.classList.add("is-active");
+                return;
+              }
+
+              selectedEngagementMetric = Number(option.value);
+              optionsWrap.querySelectorAll(".metric-float-option").forEach((item) => {
+                item.classList.toggle("is-active", item.dataset.metricValue === option.value);
+              });
+              await applyEngagementMetricToViz(vizElement);
+            });
+            optionsWrap.appendChild(button);
+          });
+
+          panel.appendChild(optionsWrap);
+          slot.appendChild(panel);
+        });
+      }
+
+      function renderSegmentFilter(slot, key, vizElement) {
+        if (key !== "agentRubric") return;
+        const panel = document.createElement("div");
+        panel.className = "segment-float-panel";
+        panel.style.left = segmentPanelPosition.x + "px";
+        panel.style.top = segmentPanelPosition.y + "px";
+
+        const title = document.createElement("div");
+        title.className = "segment-float-title";
+        title.textContent = "Segment";
+        panel.appendChild(title);
+
+        const segmentSelect = document.createElement("select");
+        segmentSelect.className = "segment-float-select";
+        panel.appendChild(segmentSelect);
+
+        const status = document.createElement("div");
+        status.className = "segment-float-status";
+        status.textContent = "Loading segments...";
+        panel.appendChild(status);
+
+        slot.appendChild(panel);
+
+        const renderOptions = (values) => {
+          segmentSelect.innerHTML = "";
+          const options = [{ value: SEGMENT_ALL_VALUE, label: "All" }].concat(values.map((value) => ({ value, label: value })));
+          if (selectedSegmentValue !== SEGMENT_ALL_VALUE && !values.includes(selectedSegmentValue)) {
+            selectedSegmentValue = SEGMENT_ALL_VALUE;
+          }
+          options.forEach((option) => {
+            const node = document.createElement("option");
+            node.value = option.value;
+            node.textContent = option.label;
+            segmentSelect.appendChild(node);
+          });
+          segmentSelect.value = selectedSegmentValue;
+        };
+
+        segmentSelect.addEventListener("change", async () => {
+          selectedSegmentValue = segmentSelect.value || SEGMENT_ALL_VALUE;
+          await applySegmentFilterToViz(vizElement, selectedSegmentValue);
+        });
+
+        fetchSegmentValues(vizElement)
+          .then(async (values) => {
+            if (!values.length) {
+              status.textContent = 'No segment values found in "' + SEGMENT_HELPER_SHEET + '".';
+              renderOptions([]);
+              segmentSelect.disabled = true;
+              return;
+            }
+            status.textContent = "";
+            renderOptions(values);
+            segmentSelect.disabled = false;
+            await applySegmentFilterToViz(vizElement, selectedSegmentValue);
+          })
+          .catch((_err) => {
+            status.textContent = 'Unable to load "' + SEGMENT_HELPER_SHEET + '" right now.';
+            renderOptions([]);
+            segmentSelect.disabled = true;
+          });
+      }
+
+      if (jumpOptions) {
+        dashboardCatalog.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = item.label;
+          jumpOptions.appendChild(option);
+        });
+      }
+
+      if (jumpToggle) {
+        jumpToggle.addEventListener("click", () => {
+          if (!jumpInput) return;
+          if (jumpInput.value.trim()) {
+            jumpInput.value = "";
+            jumpInput.setCustomValidity("");
+            setJumpToggleState();
+            jumpInput.focus();
+            return;
+          }
+          openJumpSuggestions();
+        });
+      }
+      if (jumpInput) {
+        jumpInput.addEventListener("input", () => {
+          jumpInput.setCustomValidity("");
+          setJumpToggleState();
+        });
+        jumpInput.addEventListener("change", () => {
+          const nextId = resolveDashboardId(jumpInput.value);
+          if (nextId) {
+            jumpInput.setCustomValidity("");
+            window.location.hash = "#" + nextId;
+          }
+        });
+        jumpInput.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            attemptJump();
+          }
+        });
+      }
+      setJumpToggleState();
+      links.forEach((link) => {
+        link.addEventListener("click", () => {
+          resetJumpInput();
+        });
+      });
+
+      function mountTableau(page) {
+        const slot = page.querySelector("[data-tableau-slot]");
+        const key = page.getAttribute("data-embed-key");
+        const localPageSrc = localPageEmbeds[key] || "";
+        const src = tableauEmbeds[key];
+        slot.innerHTML = "";
+        slot.style.position = "relative";
+        const vizHeight = tableauHeights[key] || 2200;
+        slot.style.minHeight = vizHeight + "px";
+
+        if (localPageSrc) {
+          const frame = document.createElement("iframe");
+          frame.className = "local-page-frame";
+          frame.setAttribute("title", "Experimentation Email Coach API");
+          frame.setAttribute("loading", "lazy");
+          frame.src = localPageSrc;
+          frame.style.height = vizHeight + "px";
+          frame.addEventListener("load", () => {
+            const syncFrameHeight = () => {
+              try {
+                const doc = frame.contentDocument;
+                if (!doc) return;
+                const bodyHeight = doc.body ? doc.body.scrollHeight : 0;
+                const nextHeight = Math.max(vizHeight, doc.documentElement.scrollHeight, bodyHeight);
+                frame.style.height = nextHeight + "px";
+                slot.style.minHeight = nextHeight + "px";
+              } catch (_err) {
+                // Ignore iframe sizing restrictions if browser blocks access.
+              }
+            };
+            syncFrameHeight();
+            [250, 800, 1500, 3000, 5000].forEach((delayMs) => {
+              setTimeout(syncFrameHeight, delayMs);
+            });
+          });
+          slot.appendChild(frame);
+          return;
+        }
+
+        if (!src) {
+          const placeholder = document.createElement("div");
+          placeholder.className = "placeholder";
+          placeholder.innerHTML =
+            "Add a Tableau URL for <code>" +
+            key +
+            "</code> in <code>tableauEmbeds</code>.<br/>Example: https://your-tableau-cloud-site/views/WorkbookName/ViewName";
+          slot.appendChild(placeholder);
+          return;
+        }
+
+        const viz = document.createElement("tableau-viz");
+        const srcWithRefresh = src.includes("?") ? src + "&refresh=y" : src + "?refresh=y";
+        viz.setAttribute("src", srcWithRefresh);
+        viz.setAttribute("toolbar", "hidden");
+        viz.setAttribute("hide-tabs", "");
+        viz.style.height = vizHeight + "px";
+        viz.addEventListener("firstinteractive", () => {
+          applyEngagementMetricToViz(viz);
+          renderFloatingMetricPicker(slot, key, viz);
+          if (key === "agentRubric") renderDeepDiveButton(slot, key);
+          renderSegmentFilter(slot, key, viz);
+        });
+
+        slot.appendChild(viz);
+      }
+
+      function showTab(tabId) {
+        const defaultId = pages[0].id;
+        const nextId = pages.some((p) => p.id === tabId) ? tabId : defaultId;
+        const activePage = pages.find((p) => p.id === nextId);
+        const activeGroup = activePage ? (activePage.getAttribute("data-embed-key") || "").replace(/[A-Z].*/, "") : "";
+        const pageToGroup = {
+          "agent-rubric": "agent-rubric",
+          efficacy: "efficacy",
+          performance: "performance",
+          "engagement-flywheel": "engagement",
+          "engagement-key-metrics": "engagement",
+          "engagement-agentblazer": "engagement",
+          "engagement-ai-adoption": "engagement",
+          "business-value-biz-dev-agents": "business-value",
+          "business-value-gtm-agents": "business-value",
+          "business-value-time-savings": "business-value",
+          "experimentation-email-coach-api": "experimentation",
+          "innovation-lab-voice-analytics": "innovation-lab",
+        };
+        const selectedGroup = pageToGroup[nextId] || activeGroup;
+
+        pages.forEach((page) => {
+          const active = page.id === nextId;
+          page.classList.toggle("is-active", active);
+          if (active) mountTableau(page);
+        });
+
+        try {
+          localStorage.setItem(TAB_STORAGE_KEY, nextId);
+        } catch (_err) {
+          // Ignore storage write errors in restricted browser modes.
+        }
+
+        links.forEach((link) => {
+          const hrefMatch = link.getAttribute("href") === "#" + nextId;
+          const sameGroup = link.getAttribute("data-tab-group") === selectedGroup;
+          const isMainTab = link.classList.contains("tab-link");
+          if (isMainTab) {
+            link.classList.toggle("is-active", hrefMatch || sameGroup);
+          } else {
+            link.classList.toggle("is-active", hrefMatch);
+          }
+        });
+
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        document.title = "Customer Zero Observability | " + nextId;
+      }
+
+      function getInitialTabId() {
+        const hashId = window.location.hash.replace("#", "");
+        if (hashId && pages.some((p) => p.id === hashId)) return hashId;
+        try {
+          const savedId = localStorage.getItem(TAB_STORAGE_KEY) || "";
+          if (savedId && pages.some((p) => p.id === savedId)) return savedId;
+        } catch (_err) {
+          // Ignore storage read errors.
+        }
+        return pages[0]?.id || "";
+      }
+
+      function onRouteChange(useInitial = false) {
+        const tabId = useInitial ? getInitialTabId() : window.location.hash.replace("#", "");
+        showTab(tabId);
+        if (tabId && window.location.hash.replace("#", "") !== tabId) {
+          history.replaceState(null, "", "#" + tabId);
+        }
+      }
+
+      window.addEventListener("hashchange", () => onRouteChange(false));
+      onRouteChange(true);
+    </script>
+  </body>
+</html>
