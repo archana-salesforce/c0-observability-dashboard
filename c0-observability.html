@@ -994,9 +994,10 @@
         justify-content: center;
         align-items: flex-start;
         padding-top: calc(52px * var(--header-scale));
-        background: var(--body-bg);
+        background: transparent;
         color: #fff;
         z-index: 4;
+        pointer-events: none;
         transition: opacity 240ms ease;
       }
 
@@ -2561,6 +2562,7 @@
           frame.setAttribute("title", "Email Coach API");
           frame.setAttribute("loading", "lazy");
           let localPageIndex = 0;
+          frame.style.visibility = "hidden";
           const setFrameSrc = () => {
             frame.src = localPageCandidates[localPageIndex] || "";
           };
@@ -2579,8 +2581,14 @@
                 setFrameSrc();
                 return;
               }
+              if (looksNotFound && localPageIndex >= localPageCandidates.length - 1) {
+                // Nothing else to try; show the frame so user can see the error content.
+                frame.style.visibility = "visible";
+                return;
+              }
             } catch (_err) {
               // Ignore access issues and continue with current source.
+              frame.style.visibility = "visible";
             }
             const syncFrameHeight = () => {
               try {
@@ -2595,6 +2603,7 @@
               }
             };
             syncFrameHeight();
+            frame.style.visibility = "visible";
             [250, 800, 1500, 3000, 5000].forEach((delayMs) => {
               setTimeout(syncFrameHeight, delayMs);
             });
@@ -2625,6 +2634,21 @@
           '<div class="viz-loading__spinner" aria-hidden="true"></div>' +
           '<div class="viz-loading__text">Loading Tableau Viz...</div>' +
           "</div>";
+        const LOADING_OVERLAY_FAILSAFE_MS = 20000;
+        let loadingOverlayHidden = false;
+        let loadingOverlayFailSafeTimer = null;
+        const hideLoadingOverlay = () => {
+          if (loadingOverlayHidden) return;
+          loadingOverlayHidden = true;
+          if (loadingOverlayFailSafeTimer) {
+            window.clearTimeout(loadingOverlayFailSafeTimer);
+            loadingOverlayFailSafeTimer = null;
+          }
+          loadingOverlay.classList.add("is-hidden");
+          window.setTimeout(() => {
+            if (loadingOverlay.isConnected) loadingOverlay.remove();
+          }, 260);
+        };
         /**
          * Tableau defaults device layout to the iframe's *smallest* dimension when `device` is omitted.
          * On macOS Chrome at non‑100% page zoom, a newly shown tab can report a wrong size at init, so
@@ -2643,10 +2667,7 @@
         applyFixedTableauEmbedBox(viz, vizHeight);
 
         viz.addEventListener("firstinteractive", async () => {
-          loadingOverlay.classList.add("is-hidden");
-          window.setTimeout(() => {
-            if (loadingOverlay.isConnected) loadingOverlay.remove();
-          }, 260);
+          hideLoadingOverlay();
           slot.classList.remove("overlays-pending");
           positionQuickViewsUnderParent(currentQuickGroup || "overview");
           applyFixedTableauEmbedBox(viz, vizHeight);
@@ -2679,6 +2700,7 @@
 
         slot.appendChild(viz);
         slot.appendChild(loadingOverlay);
+        loadingOverlayFailSafeTimer = window.setTimeout(hideLoadingOverlay, LOADING_OVERLAY_FAILSAFE_MS);
         // Render overlays as soon as the tableau-viz element is mounted (no firstinteractive wait).
         slot.classList.add("overlays-pending");
         if (overlays.metricPickers) renderFloatingMetricPicker(slot, key, viz);
