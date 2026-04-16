@@ -1,0 +1,2779 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customer Zero Observability</title>
+    <!-- Deploy: single HTML file; keep tableau.embedding script URL; paths like ./email_coach_*.html resolve from this page’s directory. -->
+    <script type="module" src="https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js"></script>
+    <style>
+      :root {
+        --body-bg: #f3f3f3;
+        --header-card: #302783;
+        --tab: #4a3aa8;
+        --tab-active: #2f1b95;
+        --sf-blue: #00a1e0;
+        --focus-ring: 0 0 0 2px rgba(0, 161, 224, 0.45);
+        --ink: #ffffff;
+        --ink-soft: rgba(255, 255, 255, 0.88);
+        --header-scale: 1.2;
+        --nav-font-size: calc(12px * var(--header-scale));
+        --header-item-height: calc(42px * var(--header-scale));
+        --pill-min-height: calc(26px * var(--header-scale));
+        --pill-pad-y: calc(7px * var(--header-scale));
+        --pill-pad-x: calc(12px * var(--header-scale));
+        --pill-radius: calc(9px * var(--header-scale));
+        --right-col-a-width: calc(56px * var(--header-scale));
+        --right-col-a-offset: calc(8px * var(--header-scale));
+        --nav-row-gap: calc(12px * var(--header-scale));
+        --viz-width: 1600px;
+        /** Native Tableau workbook size for every dashboard (matches Agent Rubric). */
+        --viz-tableau-height: 2600px;
+        --viz-default-height: 2200px;
+        --app-top-pad: 12px;
+        --top-mask-bg: #f3f3f3;
+        /** Partner logos in header: square slots; Tableau slightly smaller. */
+        --powered-by-logo-size: calc(30px * var(--header-scale));
+        --powered-by-logo-tableau-size: calc(var(--powered-by-logo-size) - 3px);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, Arial, sans-serif;
+        background: var(--body-bg);
+        color: var(--ink);
+      }
+
+      .app {
+        width: 100%;
+        max-width: calc(var(--viz-width) + 16px);
+        margin: 0 auto;
+        padding: var(--app-top-pad) 8px 4px;
+      }
+
+      .top-mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--app-top-pad);
+        background: var(--top-mask-bg);
+        z-index: 59;
+        pointer-events: none;
+      }
+
+      .header {
+        --header-pad-x: calc(10px * var(--header-scale));
+        padding: calc(8px * var(--header-scale)) var(--header-pad-x) calc(8px * var(--header-scale));
+        background: var(--header-card);
+        border-radius: calc(12px * var(--header-scale));
+        box-shadow:
+          0 8px 20px rgba(20, 10, 60, 0.18),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+
+      .header-shell {
+        position: sticky;
+        top: var(--app-top-pad);
+        z-index: 60;
+        background: var(--body-bg);
+        padding-bottom: calc(6px * var(--header-scale));
+        backdrop-filter: blur(2px);
+      }
+
+      .top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: calc(10px * var(--header-scale));
+        margin-bottom: calc(4px * var(--header-scale));
+      }
+
+      .brand-tools {
+        display: flex;
+        align-items: center;
+        gap: calc(10px * var(--header-scale));
+        min-width: 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: calc(12px * var(--header-scale));
+        min-width: 0;
+      }
+
+      .brand .sf {
+        width: auto;
+        height: calc(62px * var(--header-scale));
+        padding: 5px;
+        object-fit: contain;
+      }
+
+      .title {
+        margin: 0;
+        font-family: Inter, Arial, sans-serif;
+        font-size: calc(34px * var(--header-scale));
+        letter-spacing: 0.05em;
+        color: #fff;
+        font-weight: 500;
+        line-height: 1;
+        transform: none;
+        text-shadow:
+          0 1px 1px rgba(9, 5, 40, 0.28),
+          0 0 10px rgba(170, 197, 255, 0.12);
+      }
+
+      .powered-by {
+        display: flex;
+        align-items: center;
+        gap: calc(10px * var(--header-scale));
+        margin-left: calc(28px * var(--header-scale) + 12px);
+        flex-shrink: 0;
+        transform: translateY(calc(3px * var(--header-scale)));
+      }
+
+      .powered-by__logos {
+        display: flex;
+        align-items: center;
+        gap: calc(10px * var(--header-scale));
+        transform: translateY(calc(-2px * var(--header-scale)));
+      }
+
+      .powered-by__label {
+        display: inline-block;
+        align-self: center;
+        margin-right: calc(6px * var(--header-scale));
+        /**
+         * Avant Garde family (ITC / URW). No reliable free webfont in Google Fonts for this exact face;
+         * Century Gothic is the usual system substitute. Add Adobe Fonts / self-host if you need a guaranteed match.
+         */
+        font-family:
+          "ITC Avant Garde Gothic",
+          "Avant Garde",
+          "AvantGarde",
+          "Century Gothic",
+          "AppleGothic",
+          "URW Gothic L",
+          sans-serif;
+        font-size: calc(16px * var(--header-scale));
+        font-weight: 300;
+        letter-spacing: 0.08em;
+        color: rgba(255, 255, 255, 0.96);
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .powered-by__logo {
+        display: block;
+        flex-shrink: 0;
+        width: var(--powered-by-logo-size);
+        height: var(--powered-by-logo-size);
+        object-fit: contain;
+        object-position: center;
+        /** Soft cyan halo (follows PNG alpha); stacked blurs read like a diffuse backlight */
+        filter:
+          drop-shadow(0 0 calc(6px * var(--header-scale)) rgba(140, 235, 255, 0.55))
+          drop-shadow(0 0 calc(14px * var(--header-scale)) rgba(80, 200, 255, 0.35))
+          drop-shadow(0 0 calc(24px * var(--header-scale)) rgba(0, 161, 224, 0.2));
+      }
+
+      .powered-by__logo--tableau {
+        width: var(--powered-by-logo-tableau-size);
+        height: var(--powered-by-logo-tableau-size);
+      }
+
+      /** Faint hairline between partner logos only (shorter than logo box) */
+      .powered-by__rule {
+        width: 1px;
+        align-self: center;
+        height: calc(18px * var(--header-scale));
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.14);
+        box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+      }
+
+      .right-logos {
+        display: grid;
+        grid-template-columns: var(--right-col-a-width) auto;
+        align-items: center;
+        gap: calc(10px * var(--header-scale));
+        justify-content: end;
+      }
+
+      .right-logos .ds {
+        width: calc(118px * var(--header-scale));
+        height: var(--header-item-height);
+        object-fit: contain;
+      }
+
+      .right-logos .det {
+        height: var(--header-item-height);
+        width: auto;
+        object-fit: contain;
+        justify-self: center;
+        transform: translateX(var(--right-col-a-offset));
+      }
+
+      .nav-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: var(--nav-row-gap);
+      }
+
+      .subnav-row {
+        --subnav-offset: calc(100px * var(--header-scale));
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: calc(10px * var(--header-scale));
+        margin-left: var(--subnav-offset);
+        margin-top: calc(10px * var(--header-scale));
+        padding-left: calc(30px * var(--header-scale));
+        padding-right: max(0px, calc(var(--header-pad-x) - 8px));
+        width: fit-content;
+        max-width: calc(100% - var(--subnav-offset) - 8px);
+        box-sizing: border-box;
+        position: relative;
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 170ms ease, transform 170ms ease, margin-left 190ms ease;
+      }
+
+      .subnav-row__quick {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: calc(7px * var(--header-scale));
+        min-width: 0;
+      }
+
+      .subnav-row::before {
+        content: "";
+        position: absolute;
+        left: calc(10px * var(--header-scale));
+        top: calc(-8px * var(--header-scale));
+        width: calc(12px * var(--header-scale));
+        height: calc(50% + calc(8px * var(--header-scale)));
+        border-left: 2px solid rgba(255, 255, 255, 0.4);
+        border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+        border-bottom-left-radius: calc(5px * var(--header-scale));
+        pointer-events: none;
+      }
+
+      .subnav-row.is-switching {
+        opacity: 0.62;
+        transform: translateY(1px);
+      }
+
+      .right-actions {
+        display: grid;
+        grid-template-columns: var(--right-col-a-width) auto;
+        align-items: center;
+        gap: calc(8px * var(--header-scale));
+        justify-content: end;
+        margin-left: auto;
+      }
+
+      /**
+       * Author `display` on these nodes wins over the UA `hidden` stylesheet rule;
+       * force off when `[hidden]` so gated web-property agents fully hide overlays.
+       */
+      .metric-float-panel[hidden],
+      .deep-dive-btn[hidden] {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+
+      .metric-float-panel {
+        position: absolute;
+        left: 18px;
+        top: 220px;
+        z-index: 8;
+        display: grid;
+        gap: 8px;
+        align-content: start;
+        min-width: 260px;
+        min-height: 15px;
+        border: 1px solid rgba(83, 95, 129, 0.24);
+        border-radius: calc(8px * var(--header-scale));
+        background: rgba(248, 250, 255, 0.95);
+        padding: calc(10px * var(--header-scale));
+        box-shadow: 0 2px 8px rgba(42, 56, 95, 0.1);
+      }
+
+      .metric-float-title {
+        font-size: calc(12px * var(--header-scale));
+        color: rgba(39, 48, 78, 0.92);
+        letter-spacing: 0.02em;
+        font-weight: 700;
+        margin-bottom: calc(4px * var(--header-scale));
+      }
+
+      .metric-float-options {
+        display: grid;
+        gap: calc(5px * var(--header-scale));
+        padding-inline-end: calc(6px * var(--header-scale));
+        min-height: 0;
+        max-height: var(
+          --metric-float-options-max-height,
+          calc(
+            5 * (2px + 2 * (7px * var(--header-scale)) + (12px * var(--header-scale) * 1.2)) + 4 * (5px * var(--header-scale))
+          )
+        );
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(72, 88, 130, 0.28) transparent;
+      }
+
+      .metric-float-options::-webkit-scrollbar {
+        width: calc(7px * var(--header-scale));
+      }
+
+      .metric-float-options::-webkit-scrollbar-track {
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .metric-float-options::-webkit-scrollbar-thumb {
+        border-radius: calc(10px * var(--header-scale));
+        border: calc(2px * var(--header-scale)) solid transparent;
+        background-clip: padding-box;
+        background: rgba(72, 88, 130, 0.22);
+        box-shadow: none;
+      }
+
+      .metric-float-options::-webkit-scrollbar-thumb:hover {
+        background: rgba(72, 88, 130, 0.36);
+      }
+
+      .metric-float-option {
+        text-align: left;
+        border: 1px solid rgba(95, 107, 142, 0.2);
+        border-radius: calc(6px * var(--header-scale));
+        background: rgba(255, 255, 255, 0.9);
+        color: rgba(44, 53, 83, 0.94);
+        font-size: calc(12px * var(--header-scale));
+        line-height: 1.2;
+        padding: calc(7px * var(--header-scale)) calc(10px * var(--header-scale));
+        cursor: pointer;
+        transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+      }
+
+      .metric-float-option:hover {
+        background: rgba(245, 248, 255, 0.98);
+        border-color: rgba(95, 107, 142, 0.34);
+        transform: translateY(-1px);
+      }
+
+      .metric-float-option.is-active {
+        border-color: rgba(43, 122, 212, 0.58);
+        background: rgba(43, 122, 212, 0.14);
+        color: rgba(28, 79, 146, 0.96);
+      }
+
+      .metric-float-option:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .chemistry-sig-float-panel {
+        position: absolute;
+        z-index: 8;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        min-width: 480px;
+        max-width: 920px;
+        border: 1px solid rgba(178, 186, 203, 0.72);
+        border-radius: calc(12px * var(--header-scale));
+        background: rgba(241, 244, 249, 0.96);
+        padding: calc(6px * var(--header-scale));
+        box-shadow: 0 1px 2px rgba(42, 56, 95, 0.08);
+      }
+
+      .chemistry-sig-float-options {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: calc(10px * var(--header-scale));
+        align-items: stretch;
+      }
+
+      .chemistry-sig-float-options .metric-float-option {
+        flex: 1 1 0;
+        min-width: 0;
+        text-align: center;
+        font-size: calc(11px * var(--header-scale));
+        font-weight: 400;
+        line-height: 1.15;
+        padding: calc(6px * var(--header-scale)) calc(12px * var(--header-scale));
+        border-radius: calc(10px * var(--header-scale));
+        border-color: rgba(198, 204, 217, 0.9);
+        background: rgba(255, 255, 255, 0.9);
+        color: rgba(60, 67, 87, 0.92);
+      }
+
+      .chemistry-sig-float-options .metric-float-option:hover {
+        background: rgba(252, 253, 255, 0.98);
+        border-color: rgba(174, 184, 203, 0.94);
+      }
+
+      .chemistry-sig-float-options .metric-float-option.is-active {
+        border-color: rgba(126, 166, 220, 0.95);
+        background: linear-gradient(180deg, rgba(207, 223, 244, 0.94) 0%, rgba(191, 212, 241, 0.94) 100%);
+        color: rgba(38, 75, 127, 0.96);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.58),
+          0 1px 2px rgba(101, 132, 190, 0.24);
+      }
+
+      .chemistry-sig-layout-tool {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        z-index: 12;
+        width: min(300px, calc(100% - 24px));
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(83, 95, 129, 0.28);
+        background: rgba(255, 255, 255, 0.97);
+        box-shadow: 0 8px 24px rgba(42, 56, 95, 0.16);
+        font-size: 11px;
+        color: rgba(39, 48, 78, 0.92);
+      }
+
+      .chemistry-sig-layout-tool__title {
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 8px;
+      }
+
+      .chemistry-sig-layout-tool__row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 4px 8px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .chemistry-sig-layout-tool__row > span {
+        grid-column: 1 / -1;
+      }
+
+      .chemistry-sig-layout-tool__num {
+        width: 64px;
+        padding: 4px 6px;
+        border: 1px solid rgba(95, 107, 142, 0.25);
+        border-radius: 4px;
+        font-size: 11px;
+      }
+
+      .chemistry-sig-layout-tool__range {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+
+      .chemistry-sig-layout-tool__readout {
+        margin: 8px 0 0;
+        padding: 8px;
+        border-radius: 6px;
+        background: rgba(245, 248, 255, 0.95);
+        border: 1px solid rgba(95, 107, 142, 0.15);
+        font-size: 10px;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 100px;
+        overflow: auto;
+      }
+
+      .chemistry-sig-layout-tool__hint {
+        margin-top: 8px;
+        font-size: 10px;
+        line-height: 1.35;
+        color: rgba(39, 48, 78, 0.72);
+      }
+
+      .segment-float-panel {
+        position: absolute;
+        left: 1px;
+        top: 20px;
+        z-index: 8;
+        display: grid;
+        gap: 8px;
+        min-width: 375px;
+        max-width: 375px;
+        border: 1px solid rgba(83, 95, 129, 0.24);
+        border-radius: calc(8px * var(--header-scale));
+        background: rgba(248, 250, 255, 0.95);
+        padding: calc(10px * var(--header-scale));
+        box-shadow: 8px 8px 18px rgba(42, 56, 95, 0.14);
+        overflow: visible;
+      }
+
+      .segment-float-title-row {
+        display: flex;
+        align-items: center;
+        gap: calc(6px * var(--header-scale));
+        min-width: 0;
+      }
+
+      .segment-float-title {
+        display: block;
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-size: calc(12px * var(--header-scale));
+        color: rgba(39, 48, 78, 0.92);
+        letter-spacing: 0.02em;
+        font-weight: 700;
+        cursor: default;
+      }
+
+      .segment-float-info {
+        position: relative;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: calc(2px * var(--header-scale));
+        border: none;
+        border-radius: calc(4px * var(--header-scale));
+        background: transparent;
+        color: rgba(72, 86, 122, 0.75);
+        cursor: help;
+        line-height: 0;
+        appearance: none;
+        -webkit-appearance: none;
+        transition: color 120ms ease, background 120ms ease;
+      }
+
+      .segment-float-info:hover {
+        color: rgba(0, 97, 153, 0.95);
+        background: rgba(0, 161, 224, 0.1);
+      }
+
+      /** Native `title` on `<button>` is often suppressed; use an in-DOM tooltip (hover + focus). */
+      .segment-float-info__tooltip {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 8px);
+        bottom: auto;
+        left: auto;
+        width: max-content;
+        max-width: min(320px, calc(100vw - 24px));
+        padding: calc(10px * var(--header-scale)) calc(12px * var(--header-scale));
+        border-radius: calc(8px * var(--header-scale));
+        border: 1px solid rgba(83, 95, 129, 0.22);
+        background: #fff;
+        color: rgba(28, 35, 58, 0.96);
+        font-size: calc(11px * var(--header-scale));
+        line-height: 1.45;
+        font-weight: 400;
+        text-align: left;
+        box-shadow: 0 8px 24px rgba(42, 56, 95, 0.2);
+        z-index: 40;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.12s ease, visibility 0.12s ease;
+      }
+
+      .segment-float-info:hover .segment-float-info__tooltip,
+      .segment-float-info:focus-visible .segment-float-info__tooltip {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .segment-float-select {
+        width: 100%;
+        max-width: 100%;
+        border: 1px solid rgba(95, 107, 142, 0.2);
+        border-radius: calc(6px * var(--header-scale));
+        background: rgba(255, 255, 255, 0.9);
+        color: rgba(44, 53, 83, 0.94);
+        font-size: calc(12px * var(--header-scale));
+        line-height: 1.2;
+        padding: calc(7px * var(--header-scale)) calc(10px * var(--header-scale));
+        cursor: pointer;
+        outline: none;
+      }
+
+      .segment-float-select:focus {
+        border-color: rgba(95, 107, 142, 0.34);
+        box-shadow: 0 0 0 2px rgba(0, 161, 224, 0.22);
+      }
+
+      .segment-float-select option {
+        color: #1d2442;
+      }
+
+      .segment-float-status {
+        font-size: calc(11px * var(--header-scale));
+        color: rgba(64, 76, 108, 0.82);
+      }
+
+      /** First `right-actions` grid cell (FAQs); alignment nudge vs grid column width. */
+      .right-actions-slot {
+        position: relative;
+        display: inline-flex;
+        transform: translateX(calc(-9px * var(--header-scale) + var(--right-col-a-offset)));
+        justify-self: center;
+      }
+
+      .support {
+        display: flex;
+        align-items: center;
+        gap: calc(6px * var(--header-scale));
+        font-size: var(--nav-font-size);
+        font-weight: 500;
+        line-height: 1;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+
+      .support .slack {
+        width: calc(14px * var(--header-scale));
+        height: calc(14px * var(--header-scale));
+      }
+
+      .support-link {
+        text-decoration: none;
+      }
+
+      .support-link:hover {
+        transform: translateY(-1px);
+        background: #5a49ba;
+        color: #fff;
+      }
+
+      .tab-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: calc(7px * var(--header-scale));
+        padding-left: calc(100px * var(--header-scale));
+        flex: 0 1 auto;
+      }
+
+      .tab-item {
+        position: relative;
+        display: inline-flex;
+        align-items: flex-start;
+      }
+
+      .tab-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        border: 1px solid transparent;
+        border-radius: var(--pill-radius);
+        padding: var(--pill-pad-y) var(--pill-pad-x);
+        min-height: var(--pill-min-height);
+        min-width: calc(102px * var(--header-scale));
+        color: var(--ink-soft);
+        background: var(--tab);
+        font-size: var(--nav-font-size);
+        font-weight: 500;
+        line-height: 1;
+        transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease;
+      }
+
+      .support-link {
+        border: 1px solid transparent;
+        border-radius: var(--pill-radius);
+        padding: var(--pill-pad-y) var(--pill-pad-x);
+        min-height: var(--pill-min-height);
+        background: var(--tab);
+        color: var(--ink-soft);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--nav-font-size);
+        font-weight: 500;
+        line-height: 1;
+        transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease;
+      }
+
+      .tab-link:hover {
+        transform: translateY(-1px);
+        background: #5a49ba;
+        color: #fff;
+      }
+
+      .tab-link:focus-visible,
+      .tab-sublink:focus-visible,
+      .support-link:focus-visible,
+      .metric-float-option:focus-visible,
+      .segment-float-select:focus-visible,
+      .segment-float-info:focus-visible,
+      .deep-dive-btn:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .tab-link.is-active {
+        position: relative;
+        background: var(--tab-active);
+        color: var(--ink);
+        border: 1px solid var(--sf-blue);
+        font-weight: 600;
+        padding-left: var(--pill-pad-x);
+        box-shadow:
+          0 2px 8px rgba(8, 4, 40, 0.26),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+
+      .tab-link[data-tab-group="overview"].is-active {
+        background: linear-gradient(180deg, #3a2ba4 0%, #2f1b95 100%);
+        border-color: rgba(0, 161, 224, 0.85);
+        box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.14);
+      }
+
+      .tab-sublink {
+        text-decoration: none;
+        color: var(--ink-soft);
+        font-size: var(--nav-font-size);
+        line-height: 1.1;
+        border-radius: calc(6px * var(--header-scale));
+        padding: calc(6px * var(--header-scale)) calc(8px * var(--header-scale));
+        transition: background 120ms ease, color 120ms ease;
+      }
+
+      .tab-sublink:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .tab-sublink.is-active {
+        color: #fff;
+        background: rgba(0, 161, 224, 0.25);
+      }
+
+      .subnav-row .tab-sublink {
+        position: relative;
+        z-index: 1;
+        font-size: calc(11px * var(--header-scale));
+        font-weight: 600;
+        padding: calc(5px * var(--header-scale)) calc(8px * var(--header-scale));
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .subnav-row .tab-sublink:hover {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .subnav-row .tab-sublink.is-active {
+        color: #fff;
+        border-color: rgba(0, 161, 224, 0.78);
+        background: rgba(0, 161, 224, 0.28);
+        box-shadow:
+          inset 0 0 0 1px rgba(0, 161, 224, 0.2),
+          0 2px 6px rgba(0, 161, 224, 0.2);
+      }
+
+      .subnav-row .tab-sublink[hidden] {
+        display: none;
+      }
+
+      /** Manual data orchestration (not automated); faint magenta in subnav only */
+      .subnav-row .tab-sublink.tab-sublink--manual-orchestration {
+        color: rgba(238, 200, 248, 0.88);
+        border-color: rgba(200, 130, 210, 0.38);
+      }
+
+      .subnav-row .tab-sublink.tab-sublink--manual-orchestration:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(190, 130, 205, 0.55);
+      }
+
+      .subnav-row .tab-sublink.tab-sublink--manual-orchestration.is-active {
+        color: #fff;
+        border-color: rgba(218, 150, 245, 0.72);
+        background: rgba(170, 70, 195, 0.24);
+        box-shadow:
+          inset 0 0 0 1px rgba(220, 160, 255, 0.22),
+          0 2px 6px rgba(120, 50, 150, 0.22);
+      }
+
+      .subnav-row .tab-sublink.tab-sublink--manual-orchestration::after {
+        content: "Manual Data Orchestration";
+        position: absolute;
+        left: 50%;
+        top: calc(100% + 6px);
+        bottom: auto;
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: min(280px, calc(100vw - 24px));
+        padding: calc(6px * var(--header-scale)) calc(10px * var(--header-scale));
+        border-radius: calc(6px * var(--header-scale));
+        border: 1px solid rgba(188, 130, 200, 0.5);
+        background: rgba(22, 20, 26, 0.96);
+        color: rgba(255, 255, 255, 0.92);
+        font-size: calc(10px * var(--header-scale));
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        line-height: 1.25;
+        text-align: center;
+        white-space: nowrap;
+        z-index: 30;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        pointer-events: none;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.12s ease, visibility 0.12s ease;
+      }
+
+      .subnav-row .tab-sublink.tab-sublink--manual-orchestration:hover::after,
+      .subnav-row .tab-sublink.tab-sublink--manual-orchestration:focus-visible::after {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .page {
+        display: none;
+        margin-top: 2px;
+        padding: 0;
+      }
+
+      .page.is-active {
+        display: block;
+      }
+
+      .tableau-slot {
+        width: min(100%, var(--viz-width));
+        margin: 0 auto;
+        min-height: var(--viz-default-height);
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow-x: hidden;
+        overflow-y: visible;
+        display: block;
+        border-radius: 10px;
+      }
+
+      /** Fixed 1600×2600 Tableau host box (every dashboard, same as Agent Rubric). Narrow viewports scroll horizontally. */
+      .page:has([data-tableau-slot] tableau-viz) {
+        overflow-x: auto;
+      }
+
+      .tableau-slot:has(tableau-viz) {
+        width: var(--viz-width);
+        min-width: var(--viz-width);
+        max-width: var(--viz-width);
+        overflow-x: visible;
+      }
+
+      .tableau-slot tableau-viz {
+        display: block;
+        width: var(--viz-width);
+        min-width: var(--viz-width);
+        max-width: var(--viz-width);
+        height: var(--viz-tableau-height);
+        min-height: var(--viz-tableau-height);
+        box-sizing: border-box;
+      }
+
+      .tableau-slot .local-page-frame {
+        display: block;
+        width: 100%;
+        height: var(--viz-default-height);
+        min-height: var(--viz-default-height);
+        border: 0;
+        background: transparent;
+        border-radius: 10px;
+      }
+
+      .tableau-slot.overlays-pending .metric-float-panel,
+      .tableau-slot.overlays-pending .segment-float-panel,
+      .tableau-slot.overlays-pending .chemistry-sig-float-panel,
+      .tableau-slot.overlays-pending .deep-dive-btn {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .metric-float-panel,
+      .segment-float-panel,
+      .chemistry-sig-float-panel,
+      .deep-dive-btn {
+        transition: opacity 170ms ease;
+      }
+
+      .deep-dive-btn {
+        position: absolute;
+        left: 18px;
+        right: auto;
+        top: 168px;
+        z-index: 8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        width: fit-content;
+        min-width: 0;
+        white-space: nowrap;
+        box-sizing: border-box;
+        border: 1px solid rgba(185, 206, 245, 0.78);
+        border-radius: calc(10px * var(--header-scale));
+        background: linear-gradient(90deg, rgba(103, 89, 224, 0.96) 0%, rgba(81, 116, 223, 0.95) 54%, rgba(69, 151, 229, 0.94) 100%);
+        color: #fff;
+        font-size: calc(12px * var(--header-scale));
+        font-weight: 400;
+        line-height: 1.2;
+        letter-spacing: 0;
+        text-shadow: 0 1px 1px rgba(22, 19, 84, 0.36);
+        padding: calc(6px * var(--header-scale)) calc(10px * var(--header-scale));
+        cursor: pointer;
+        box-shadow:
+          0 2px 6px rgba(44, 66, 170, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.24);
+        transition: background 140ms ease, border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+      }
+
+      .deep-dive-btn:hover {
+        background: linear-gradient(90deg, rgba(111, 97, 232, 0.97) 0%, rgba(89, 125, 231, 0.96) 54%, rgba(76, 160, 236, 0.95) 100%);
+        border-color: rgba(203, 221, 251, 0.9);
+        box-shadow:
+          0 3px 8px rgba(43, 67, 177, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        transform: translateY(-1px);
+      }
+
+      .deep-dive-btn.deep-dive-btn--manual-orchestration {
+        background: linear-gradient(90deg, rgba(93, 83, 219, 0.96) 0%, rgba(76, 112, 220, 0.95) 56%, rgba(66, 146, 225, 0.94) 100%);
+        border-color: rgba(183, 206, 246, 0.82);
+        box-shadow:
+          0 2px 6px rgba(43, 66, 170, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      }
+
+      .deep-dive-btn.deep-dive-btn--manual-orchestration:hover {
+        background: linear-gradient(90deg, rgba(101, 92, 227, 0.97) 0%, rgba(84, 122, 229, 0.96) 56%, rgba(73, 156, 234, 0.95) 100%);
+        border-color: rgba(200, 220, 251, 0.9);
+        box-shadow:
+          0 3px 8px rgba(43, 66, 178, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      }
+
+      .deep-dive-btn:active,
+      .metric-float-option:active {
+        transform: translateY(0);
+      }
+
+      .placeholder {
+        padding: 20px;
+        text-align: center;
+        color: #243041;
+        line-height: 1.5;
+        font-size: 15px;
+      }
+
+      .placeholder code {
+        color: #1a2638;
+        background: rgba(36, 58, 96, 0.12);
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 1200px) {
+        .tab-nav {
+          padding-left: calc(30px * var(--header-scale));
+        }
+
+        .subnav-row {
+          --subnav-offset: calc(30px * var(--header-scale));
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="top-mask" aria-hidden="true"></div>
+    <div class="app">
+      <div class="header-shell">
+        <header class="header">
+          <div class="top-row">
+            <div class="brand-tools">
+              <div class="brand">
+                <img class="sf" src="./sf logo.svg" alt="Salesforce" />
+                <h1 class="title" id="c0-app-title">Customer Zero Observability</h1>
+                <div class="powered-by" aria-label="Powered by Agentforce, Data 360, and Tableau">
+                  <span class="powered-by__label">Powered by</span>
+                  <div class="powered-by__logos">
+                    <img class="powered-by__logo" src="./agentforce.png" alt="Agentforce" />
+                    <span class="powered-by__rule" aria-hidden="true"></span>
+                    <img class="powered-by__logo" src="./data360.png" alt="Data 360" />
+                    <span class="powered-by__rule" aria-hidden="true"></span>
+                    <img class="powered-by__logo powered-by__logo--tableau" src="./tableau.png" alt="Tableau" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="right-logos">
+              <img class="det" src="./det logo.svg" alt="DET" />
+              <img class="ds" src="./ds logo.svg" alt="Data Solutions" />
+            </div>
+          </div>
+          <div class="nav-row">
+            <nav class="tab-nav" aria-label="Dashboard tabs">
+              <div class="tab-item">
+                <a href="#agent-rubric" class="tab-link" data-tab-link data-tab-group="overview">Overview</a>
+              </div>
+              <div class="tab-item">
+                <a href="#efficacy-response-quality" class="tab-link" data-tab-link data-tab-group="efficacy">Efficacy</a>
+              </div>
+              <div class="tab-item">
+                <a href="#performance-latency" class="tab-link" data-tab-link data-tab-group="performance">Performance</a>
+              </div>
+
+              <div class="tab-item">
+                <a href="#engagement-key-metrics" class="tab-link" data-tab-link data-tab-group="engagement">Engagement</a>
+              </div>
+
+              <div class="tab-item">
+                <a href="#business-value-time-savings" class="tab-link" data-tab-link data-tab-group="business-value">Business Value</a>
+              </div>
+
+              <div class="tab-item">
+                <a href="#innovation-lab-email-coach-api" class="tab-link" data-tab-link data-tab-group="innovation-lab"
+                  >Innovation Lab</a>
+              </div>
+            </nav>
+            <!-- Intentionally no "Jump to" / dashboard search in this row — product decision; do not re-add (see SESSION_NOTES.md). -->
+            <div class="right-actions">
+              <div class="right-actions-slot">
+                <a
+                  class="support support-link faqs-link"
+                  href="https://docs.google.com/document/d/1KYdtJ7PUOgbnxrg5C3b-H2-kWDgzYUfNQ78hcob-1Bs/edit?tab=t.0"
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  <span>FAQs</span>
+                </a>
+              </div>
+              <a
+                class="support support-link"
+                href="https://salesforce.enterprise.slack.com/archives/C08MG429MJS"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img class="slack" src="./slack.svg" alt="" />
+                <span>Get Support</span>
+              </a>
+            </div>
+          </div>
+          <div class="subnav-row" aria-label="Sub page navigation">
+            <div class="subnav-row__quick">
+              <a href="#agent-rubric" class="tab-sublink" data-tab-link data-tab-group="overview" data-quick-group="overview">Agent Rubric</a>
+              <a href="#overview-metric-chemistry" class="tab-sublink" data-tab-link data-tab-group="overview" data-quick-group="overview">Metric Chemistry</a>
+              <a href="#overview-topic-diagnostics" class="tab-sublink" data-tab-link data-tab-group="overview" data-quick-group="overview">Topic Diagnostics</a>
+              <a href="#efficacy-response-quality" class="tab-sublink" data-tab-link data-tab-group="efficacy" data-quick-group="efficacy">Response Quality</a>
+              <a
+                href="#efficacy-user-sentiment"
+                class="tab-sublink tab-sublink--manual-orchestration"
+                data-tab-link
+                data-tab-group="efficacy"
+                data-quick-group="efficacy"
+                >User Sentiment</a>
+              <a
+                href="#efficacy-topic-collision"
+                class="tab-sublink tab-sublink--manual-orchestration"
+                data-tab-link
+                data-tab-group="efficacy"
+                data-quick-group="efficacy"
+                >Topic Collision</a>
+              <a href="#performance-latency" class="tab-sublink" data-tab-link data-tab-group="performance" data-quick-group="performance">Latency</a>
+              <a href="#engagement-key-metrics" class="tab-sublink" data-tab-link data-tab-group="engagement" data-quick-group="engagement">Key Metrics</a>
+              <a
+                href="#engagement-flywheel"
+                class="tab-sublink tab-sublink--manual-orchestration"
+                data-tab-link
+                data-tab-group="engagement"
+                data-quick-group="engagement"
+                >Flywheel</a>
+              <a
+                href="#business-value-time-savings"
+                class="tab-sublink tab-sublink--manual-orchestration"
+                data-tab-link
+                data-tab-group="business-value"
+                data-quick-group="business-value"
+                >Time Savings</a>
+              <a href="#innovation-lab-email-coach-api" class="tab-sublink" data-tab-link data-tab-group="innovation-lab" data-quick-group="innovation-lab">Email Coach API</a>
+            </div>
+          </div>
+        </header>
+      </div>
+
+      <main aria-labelledby="c0-app-title">
+        <section id="agent-rubric" class="page" data-page data-embed-key="agentRubric">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="overview-metric-chemistry" class="page" data-page data-embed-key="overviewMetricChemistry">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="overview-topic-diagnostics" class="page" data-page data-embed-key="overviewTopicDiagnostics">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="efficacy-response-quality" class="page" data-page data-embed-key="efficacyResponseQuality">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="efficacy-user-sentiment" class="page" data-page data-embed-key="efficacyUserSentiment">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="efficacy-topic-collision" class="page" data-page data-embed-key="efficacyTopicCollision">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="performance-latency" class="page" data-page data-embed-key="performanceLatency">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="engagement-key-metrics" class="page" data-page data-embed-key="engagementKeyMetrics">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="engagement-flywheel" class="page" data-page data-embed-key="engagementFlywheel">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+        <section id="business-value-time-savings" class="page" data-page data-embed-key="businessValueTimeSavings">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+
+        <section id="innovation-lab-email-coach-api" class="page" data-page data-embed-key="innovationLabEmailCoachApi">
+          <div class="tableau-slot" data-tableau-slot></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // Tableau: view slug relative to TABLEAU_VIEWS_BASE, or a full https://... embed URL.
+      const TABLEAU_VIEWS_BASE =
+        "https://prod-uswest-c.online.tableau.com/#/site/salesforce/views/C0Observability/";
+      function resolveTableauEmbedSrc(entry) {
+        if (entry == null || !String(entry).trim()) return "";
+        const s = String(entry).trim();
+        if (/^https?:\/\//i.test(s)) return s;
+        return TABLEAU_VIEWS_BASE + s.replace(/^\/+/, "");
+      }
+
+      const tableauEmbeds = {
+        agentRubric: "ASR_Agent_Metrics",
+        overviewMetricChemistry: "ASR_Agent_Chemistry",
+        overviewTopicDiagnostics: "ASR_Topic_Diagnosis",
+        efficacyResponseQuality: "Efficacy_Response_Quality",
+        efficacyUserSentiment: "Efficacy_User_Sentiment",
+        efficacyTopicCollision: "Efficacy_Topic_Collision",
+        performanceLatency: "Performance_Latency",
+        engagementFlywheel: "Engagement_Flywheel",
+        engagementKeyMetrics: "Engagement_Key_Metrics",
+        businessValueTimeSavings: "BizVal_Time_Savings",
+        innovationLabEmailCoachApi: "",
+      };
+
+      /** Which host-page overlays mount after viz firstinteractive (per data-embed-key). */
+      const customOverlaysByEmbedKey = {
+        agentRubric: {
+          metricPickers: true,
+          segmentFilter: true,
+          deepDiveButtons: true,
+        },
+        overviewMetricChemistry: { segmentFilter: true, chemistrySignificance: true },
+        overviewTopicDiagnostics: { segmentFilter: true },
+      };
+
+      const localPageEmbeds = {
+        innovationLabEmailCoachApi: ["./email_coach_v34_scrubbed.html", "./email_coach_v34.html"],
+      };
+
+      // Viz height. C0Observability dashboards: 1600×2600 design; slot width matches Rubric (min(100%, 1600)).
+      const tableauHeights = {
+        agentRubric: 2600,
+        overviewMetricChemistry: 2600,
+        overviewTopicDiagnostics: 2600,
+        efficacyResponseQuality: 2600,
+        efficacyUserSentiment: 2600,
+        efficacyTopicCollision: 2600,
+        performanceLatency: 2600,
+        engagementFlywheel: 2600,
+        engagementKeyMetrics: 2600,
+        businessValueTimeSavings: 2600,
+        innovationLabEmailCoachApi: 3600,
+      };
+
+      const TAB_STORAGE_KEY = "c0-observability:last-tab";
+      const AGENT_NAME_PARAM = "agent_name_p";
+      const CHEMISTRY_SIG_PARAM = "chemistry_sig_p";
+      const CHEMISTRY_SIG_OPTIONS = [
+        { value: 1, label: "Statistically Significant Only" },
+        { value: 2, label: "All" },
+      ];
+      let chemistrySigSelection = 1;
+      /** Rubric + Metric Chemistry both read agent options from this worksheet (`agent_name_p`). */
+      const AGENT_NAME_HELPER_SHEET_DEFAULT = "agent_name_p";
+      const AGENT_NAME_HELPER_SHEET_OVERRIDES = {};
+      function getAgentNameHelperSheet(embedKey) {
+        return AGENT_NAME_HELPER_SHEET_OVERRIDES[embedKey] || AGENT_NAME_HELPER_SHEET_DEFAULT;
+      }
+      const AGENT_NAME_DEFAULT = "Sales Agent";
+      const AGENT_NAME_HELP_TEXT =
+        "Metrics and diagnosis analysis are available here for agents that have session tracing enabled, and utterance data enabled. For other agents, use View more detail for granular metrics.";
+      /** Agent Rubric: hide top metric panel + first Deep Dive only for web-property agents. */
+      function normalizeAgentNameForWebPropertyGate(name) {
+        let v = String(name == null ? "" : name).trim().toLowerCase();
+        v = v.replace(/\s+/g, "");
+        v = v.replace(/^https?:\/\//, "");
+        const slash = v.indexOf("/");
+        if (slash !== -1) v = v.slice(0, slash);
+        const q = v.indexOf("?");
+        if (q !== -1) v = v.slice(0, q);
+        v = v.replace(/\.$/, "");
+        return v;
+      }
+      function shouldHideTopMetricAndDeepDivesForAgent(name) {
+        const v = normalizeAgentNameForWebPropertyGate(name);
+        if (!v) return false;
+        if (v === "www.salesforce.com" || v === "help.salesforce.com") return true;
+        if (v === "help") return true;
+        return false;
+      }
+      const segmentPanelPosition = { x: 1, y: 20 };
+      /**
+       * Stat-sig overlay position (px, Tableau slot). Tune with on-page tool; paste into defaults when locked.
+       */
+      const CHEMISTRY_SIG_LAYOUT_DEFAULTS = {
+        left: 381,
+        top: 171,
+      };
+      const CHEMISTRY_SIG_LAYOUT_STORAGE_KEY = "c0-observability-chemistry-sig-layout";
+      const CHEMISTRY_SIG_LAYOUT_TOOL_ENABLED = false;
+      const metricPickerPosition = { x: 18, y: 220 };
+      const METRIC_PICKER_VERTICAL_GAP = 400;
+      /** Max visible metric option rows; height cap is taken from the first panel (this many rows). */
+      const METRIC_SELECTOR_MAX_VISIBLE_OPTIONS = 5;
+      const DEEP_DIVE_BUTTON_COUNT = 4;
+      const DEEP_DIVE_TARGETS = [
+        "engagement-key-metrics",
+        "efficacy-response-quality",
+        "performance-latency",
+        "efficacy-response-quality",
+      ];
+      const DEEP_DIVE_X_OFFSETS = [0, 0, 0, 0];
+      const DEEP_DIVE_Y_OFFSETS = [0, 0, 0, 0];
+      /**
+       * Metric panel index (same order as metricListParameterOverlayConfig) for each Deep Dive.
+       * Last button aligns with slot 4 (satisfaction, index 3), not slot 5.
+       */
+      const DEEP_DIVE_METRIC_PANEL_INDEX = [0, 1, 2, 3];
+      /**
+       * Agent Rubric — list-style Tableau parameters; array order = overlay panels top-to-bottom.
+       * Default selection is the first option’s value unless defaultValue is set on the entry.
+       */
+      const metricListParameterOverlayConfig = [
+        {
+          key: "engagement",
+          paramName: "engagement_metric",
+          panelTitle: "",
+          panelAriaLabel: "Engagement metric",
+          options: [
+            { value: 1, label: "MAU" },
+            { value: 2, label: "Weekly Acquisition Rate" },
+            { value: 3, label: "Engagement Depth Rate" },
+            { value: 4, label: "Stickiness" },
+            { value: 5, label: "1-Week Retention Rate" },
+          ],
+        },
+        {
+          key: "efficacy",
+          paramName: "efficacy_metric",
+          panelTitle: "",
+          panelAriaLabel: "Efficacy metric",
+          options: [
+            { value: 1, label: "Negative Response Rate" },
+            { value: 2, label: "Re-Prompt Rate" },
+            { value: 3, label: "Conciseness Score" },
+            { value: 4, label: "Answer Relevancy" },
+            { value: 5, label: "Decisiveness Score" },
+            { value: 6, label: "Helpfulness Score" },
+            { value: 7, label: "Teachability Score" },
+          ],
+        },
+        {
+          key: "performance",
+          paramName: "performance_metric",
+          panelTitle: "",
+          panelAriaLabel: "Performance metric",
+          options: [
+            { value: 1, label: "Planner Duration" },
+            { value: 2, label: "Action Duration" },
+          ],
+        },
+        {
+          key: "satisfaction",
+          paramName: "satisfaction_metric",
+          panelTitle: "",
+          panelAriaLabel: "Satisfaction metric",
+          options: [{ value: 1, label: "Positive Response Rate" }],
+        },
+      ];
+
+      const metricListSelection = Object.fromEntries(
+        metricListParameterOverlayConfig.map((d) => [
+          d.key,
+          d.defaultValue !== undefined && d.defaultValue !== null ? d.defaultValue : d.options[0]?.value ?? 1,
+        ])
+      );
+
+      const deepDiveConfig = {
+        agentRubric: { belowPanelGap: 16, targetTab: "efficacy-response-quality" },
+      };
+
+      function positionDeepDiveButtons(slot, key) {
+        const cfg = deepDiveConfig[key];
+        if (!cfg) return;
+        const gap = cfg.belowPanelGap != null ? cfg.belowPanelGap : 14;
+        const panels = slot.querySelectorAll(".metric-float-panel");
+        const slotRect = slot.getBoundingClientRect();
+        slot.querySelectorAll(".deep-dive-btn").forEach((btn, idx) => {
+          if (btn.hasAttribute("hidden")) {
+            btn.style.removeProperty("left");
+            btn.style.removeProperty("top");
+            btn.style.removeProperty("right");
+            return;
+          }
+          const panelIndex =
+            DEEP_DIVE_METRIC_PANEL_INDEX[idx] != null ? DEEP_DIVE_METRIC_PANEL_INDEX[idx] : idx;
+          const panel = panels[panelIndex];
+          btn.style.right = "auto";
+          if (panel && !panel.hidden) {
+            const pr = panel.getBoundingClientRect();
+            const optionBtn = panel.querySelector(".metric-float-option");
+            const optionRect = optionBtn ? optionBtn.getBoundingClientRect() : null;
+            const baseLeft = optionRect ? optionRect.left : pr.left;
+            btn.style.left = baseLeft - slotRect.left + (DEEP_DIVE_X_OFFSETS[idx] || 0) + "px";
+            btn.style.top =
+              pr.bottom - slotRect.top + gap + (DEEP_DIVE_Y_OFFSETS[idx] || 0) + "px";
+          } else {
+            btn.style.left = metricPickerPosition.x + (DEEP_DIVE_X_OFFSETS[idx] || 0) + "px";
+            btn.style.top = "168px";
+          }
+        });
+      }
+
+      function applyMetricOptionsMaxHeight(slot, embedKey) {
+        const panels = slot.querySelectorAll(".metric-float-panel");
+        const firstPanel = Array.from(panels).find((p) => !p.hidden) || panels[0];
+        const firstOpts = firstPanel?.querySelector(".metric-float-options");
+        if (!firstOpts) return;
+
+        const n = firstOpts.children.length;
+        const btn = firstOpts.querySelector(".metric-float-option");
+        if (!btn) return;
+        const rowH = btn.getBoundingClientRect().height;
+        const gapPx = Number.parseFloat(getComputedStyle(firstOpts).rowGap) || 0;
+        const fiveRowCap =
+          METRIC_SELECTOR_MAX_VISIBLE_OPTIONS * rowH +
+          (METRIC_SELECTOR_MAX_VISIBLE_OPTIONS - 1) * gapPx;
+
+        /* Slight headroom avoids subpixel/border rounding making a 5-row list 1px taller than max-height (which would show a scrollbar). */
+        const maxH =
+          n === METRIC_SELECTOR_MAX_VISIBLE_OPTIONS
+            ? Math.ceil(firstOpts.scrollHeight) + 4
+            : Math.ceil(fiveRowCap) + 2;
+        slot.style.setProperty("--metric-float-options-max-height", `${maxH}px`);
+
+        if (embedKey && deepDiveConfig[embedKey]) {
+          requestAnimationFrame(() => positionDeepDiveButtons(slot, embedKey));
+        }
+      }
+
+      const dashboardCatalog = [
+        { id: "agent-rubric", label: "Overview / Agent Rubric" },
+        { id: "overview-metric-chemistry", label: "Overview / Metric Chemistry" },
+        { id: "overview-topic-diagnostics", label: "Overview / Topic Diagnostics" },
+        { id: "efficacy-response-quality", label: "Efficacy / Response Quality" },
+        { id: "efficacy-user-sentiment", label: "Efficacy / User Sentiment" },
+        { id: "efficacy-topic-collision", label: "Efficacy / Topic Collision" },
+        { id: "performance-latency", label: "Performance / Latency" },
+        { id: "engagement-key-metrics", label: "Engagement / Key Metrics" },
+        { id: "engagement-flywheel", label: "Engagement / Flywheel" },
+        { id: "business-value-time-savings", label: "Business Value / Time Savings" },
+        { id: "innovation-lab-email-coach-api", label: "Innovation Lab / Email Coach API" },
+      ];
+
+      const pages = Array.from(document.querySelectorAll("[data-page]"));
+      const links = Array.from(document.querySelectorAll("[data-tab-link]"));
+      const parentTabLinks = Array.from(document.querySelectorAll(".tab-nav .tab-link"));
+      const headerEl = document.querySelector(".header");
+      const subnavRow = document.querySelector(".subnav-row");
+      const quickViewLinks = Array.from(document.querySelectorAll("[data-quick-group]"));
+      let currentQuickGroup = "";
+      let subnavSwitchTimer = null;
+      /** Shared across Agent Rubric + Metric Chemistry; drives `agent_name_p` on each viz load and tab change. */
+      let selectedAgentNameValue = AGENT_NAME_DEFAULT;
+
+      function syncWebPropertyAgentOverlayVisibility(slot, embedKey) {
+        if (embedKey !== "agentRubric" || !slot) return;
+        const selectEl = slot.querySelector(".segment-float-select");
+        const fromUi =
+          selectEl && !selectEl.disabled ? String(selectEl.value || "").trim() : "";
+        const effectiveAgentName = fromUi || selectedAgentNameValue;
+        const hide = shouldHideTopMetricAndDeepDivesForAgent(effectiveAgentName);
+        const panels = slot.querySelectorAll(".metric-float-panel");
+        if (panels[0]) {
+          panels[0].toggleAttribute("hidden", hide);
+        }
+        slot.querySelectorAll(".deep-dive-btn").forEach((btn, i) => {
+          btn.toggleAttribute("hidden", hide && i === 0);
+        });
+        if (deepDiveConfig[embedKey]) {
+          requestAnimationFrame(() => positionDeepDiveButtons(slot, embedKey));
+        }
+        applyMetricOptionsMaxHeight(slot, embedKey);
+      }
+
+      function normalizeText(value) {
+        return (value || "").trim().toLowerCase();
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+
+      function getSheetName(sheet) {
+        return (sheet && (sheet.name || (typeof sheet.getName === "function" ? sheet.getName() : ""))) || "";
+      }
+
+      function getActiveWorksheets(vizElement) {
+        const activeSheet = vizElement?.workbook?.activeSheet;
+        if (!activeSheet) return [];
+        if (Array.isArray(activeSheet.worksheets) && activeSheet.worksheets.length) {
+          return activeSheet.worksheets;
+        }
+        return [activeSheet];
+      }
+
+      function getSummaryRows(summaryData) {
+        if (summaryData && Array.isArray(summaryData.data)) return summaryData.data;
+        if (summaryData && typeof summaryData.getData === "function") {
+          try {
+            const data = summaryData.getData();
+            return Array.isArray(data) ? data : [];
+          } catch (_err) {
+            return [];
+          }
+        }
+        return [];
+      }
+
+      function getCellText(cell) {
+        if (cell == null) return "";
+        if (typeof cell === "string" || typeof cell === "number" || typeof cell === "boolean") return String(cell).trim();
+        const candidate = cell.formattedValue ?? cell.value ?? cell.nativeValue ?? "";
+        return String(candidate).trim();
+      }
+
+      async function fetchAgentNameParameterOptions(vizElement, helperSheetName) {
+        const sheetName = helperSheetName || AGENT_NAME_HELPER_SHEET_DEFAULT;
+        const worksheets = getActiveWorksheets(vizElement);
+        const helper = worksheets.find(
+          (sheet) => normalizeText(getSheetName(sheet)) === normalizeText(sheetName)
+        );
+        if (!helper || typeof helper.getSummaryDataAsync !== "function") return [];
+
+        let summary;
+        try {
+          summary = await helper.getSummaryDataAsync({ maxRows: 10000 });
+        } catch (_errWithOpts) {
+          try {
+            summary = await helper.getSummaryDataAsync();
+          } catch (_errNoOpts) {
+            return [];
+          }
+        }
+
+        const rows = getSummaryRows(summary);
+        const ordered = [];
+        const seen = new Set();
+        for (const row of rows) {
+          const value = getCellText(Array.isArray(row) ? row[0] : row);
+          if (!value.length || seen.has(value)) continue;
+          seen.add(value);
+          ordered.push(value);
+        }
+        return ordered;
+      }
+
+      async function applyAgentNameParameterToViz(vizElement, paramValue) {
+        if (!vizElement) return false;
+        const valueToApply = String(paramValue == null ? "" : paramValue).trim() || AGENT_NAME_DEFAULT;
+
+        async function tryWorkbook(wb) {
+          if (!wb || typeof wb.changeParameterValueAsync !== "function") return false;
+          await wb.changeParameterValueAsync(AGENT_NAME_PARAM, valueToApply);
+          return true;
+        }
+
+        async function tryViz(viz) {
+          if (!viz || typeof viz.changeParameterValueAsync !== "function") return false;
+          await viz.changeParameterValueAsync(AGENT_NAME_PARAM, valueToApply);
+          return true;
+        }
+
+        try {
+          if (await tryWorkbook(vizElement.workbook)) return true;
+          if (await tryViz(vizElement)) return true;
+        } catch (err) {
+          console.warn("Unable to apply Tableau parameter", AGENT_NAME_PARAM, err);
+        }
+        return false;
+      }
+
+      function renderDeepDiveButton(slot, key) {
+        if (!deepDiveConfig[key]) return;
+        const cfg = deepDiveConfig[key];
+        Array.from({ length: DEEP_DIVE_BUTTON_COUNT }, (_unused, idx) => {
+          const deepDiveButton = document.createElement("button");
+          deepDiveButton.type = "button";
+          deepDiveButton.className = "deep-dive-btn";
+          const targetTab = DEEP_DIVE_TARGETS[idx] || cfg.targetTab;
+          if (targetTab === "business-value-time-savings") {
+            deepDiveButton.classList.add("deep-dive-btn--manual-orchestration");
+          }
+          deepDiveButton.textContent = "View More Detail";
+          const destTitle = dashboardCatalog.find((d) => d.id === targetTab)?.label || targetTab;
+          deepDiveButton.setAttribute("aria-label", `View more detail — ${destTitle}`);
+          deepDiveButton.addEventListener("click", () => {
+            window.location.hash = "#" + targetTab;
+          });
+          slot.appendChild(deepDiveButton);
+        });
+        positionDeepDiveButtons(slot, key);
+        requestAnimationFrame(() => positionDeepDiveButtons(slot, key));
+      }
+
+      function setQuickViewGroup(group) {
+        const groupChanged = currentQuickGroup && currentQuickGroup !== group;
+        if (groupChanged && subnavRow) {
+          subnavRow.classList.add("is-switching");
+          if (subnavSwitchTimer) window.clearTimeout(subnavSwitchTimer);
+          subnavSwitchTimer = window.setTimeout(() => {
+            subnavRow.classList.remove("is-switching");
+          }, 170);
+        }
+        quickViewLinks.forEach((link) => {
+          link.hidden = link.getAttribute("data-quick-group") !== group;
+        });
+        currentQuickGroup = group;
+        /** After `hidden` toggles, layout must settle before measuring row width for `--subnav-offset`. */
+        requestAnimationFrame(() => {
+          positionQuickViewsUnderParent(group);
+        });
+      }
+
+      function positionQuickViewsUnderParent(group) {
+        if (!subnavRow || !headerEl) return;
+        const parentLink = parentTabLinks.find((link) => link.getAttribute("data-tab-group") === group);
+        if (!parentLink) return;
+        const headerRect = headerEl.getBoundingClientRect();
+        const parentRect = parentLink.getBoundingClientRect();
+        const rowRect = subnavRow.getBoundingClientRect();
+        const rowWidth = rowRect.width || subnavRow.offsetWidth || 0;
+        const inset = 8;
+        const rawOffset = parentRect.left - headerRect.left;
+        const maxOffset = Math.max(inset, headerRect.width - rowWidth - inset);
+        const clampedOffset = clamp(rawOffset, inset, maxOffset);
+        subnavRow.style.setProperty("--subnav-offset", clampedOffset.toFixed(1) + "px");
+      }
+
+      function normalizeParamName(name) {
+        return String(name || "")
+          .trim()
+          .toLowerCase();
+      }
+
+      function findWorkbookParameter(parameters, paramName) {
+        if (!Array.isArray(parameters)) return null;
+        const want = normalizeParamName(paramName);
+        return parameters.find((p) => p && normalizeParamName(p.name) === want) || null;
+      }
+
+      function parameterListValues(param) {
+        if (!param) return null;
+        const av = param.allowableValues;
+        if (Array.isArray(av)) return av;
+        if (av && Array.isArray(av.values)) return av.values;
+        if (av && Array.isArray(av.allowableValues)) return av.allowableValues;
+        if (param.domain && Array.isArray(param.domain.values)) return param.domain.values;
+        return null;
+      }
+
+      /** List-type parameters: workbook list order — option value v uses list[v - 1] when present. */
+      function listParameterValueAtOptionIndex(param, optionValue) {
+        const list = parameterListValues(param);
+        if (!Array.isArray(list) || !list.length) return null;
+        const i = Number(optionValue) - 1;
+        if (i < 0 || i >= list.length) return null;
+        const item = list[i];
+        if (item == null) return null;
+        if (typeof item === "string" || typeof item === "number" || typeof item === "boolean") return item;
+        if (item.value !== undefined && item.value !== null) return item.value;
+        if (item.nativeValue !== undefined && item.nativeValue !== null) return item.nativeValue;
+        return null;
+      }
+
+      function collectListParameterCandidateValues(paramObj, metricNum, fromAllowable, label) {
+        const candidateValues = [];
+        const push = (v) => {
+          if (v === undefined || v === null) return;
+          candidateValues.push(v);
+        };
+
+        if (fromAllowable !== null && fromAllowable !== undefined) push(fromAllowable);
+
+        const list = parameterListValues(paramObj);
+        const idx = Number(metricNum) - 1;
+        if (Array.isArray(list) && idx >= 0 && idx < list.length) {
+          const item = list[idx];
+          if (item != null) {
+            if (typeof item === "string" || typeof item === "number" || typeof item === "boolean") {
+              push(item);
+              push(String(item));
+            } else if (typeof item === "object") {
+              if (item.value !== undefined && item.value !== null) {
+                push(item.value);
+                push(String(item.value));
+              }
+              if (item.nativeValue !== undefined && item.nativeValue !== null) push(item.nativeValue);
+              if (item.formattedValue !== undefined && item.formattedValue !== null) {
+                push(item.formattedValue);
+              }
+            }
+          }
+        }
+
+        push(Number(metricNum));
+        push(String(metricNum));
+        if (label) push(label);
+        return candidateValues;
+      }
+
+      async function applyTableauListStyleParameter(vizElement, paramName, selectedValue, optionsList) {
+        if (!vizElement) return false;
+
+        const wb = vizElement.workbook;
+        const metricNum = Number(selectedValue);
+        const pickedOption = optionsList.find((o) => o.value === metricNum);
+        const label = pickedOption ? pickedOption.label : "";
+
+        let workbookParameters = null;
+        if (wb && typeof wb.getParametersAsync === "function") {
+          try {
+            workbookParameters = await wb.getParametersAsync();
+          } catch (err) {
+            console.warn("applyTableauListStyleParameter getParametersAsync", paramName, err);
+          }
+        }
+
+        const paramObj = workbookParameters ? findWorkbookParameter(workbookParameters, paramName) : null;
+        const fromAllowable = listParameterValueAtOptionIndex(paramObj, metricNum);
+        const apiName = paramObj && paramObj.name ? paramObj.name : paramName;
+        const candidateValues = collectListParameterCandidateValues(
+          paramObj,
+          metricNum,
+          fromAllowable,
+          label
+        );
+
+        if (paramObj && typeof paramObj.changeValueAsync === "function") {
+          for (const value of candidateValues) {
+            try {
+              await paramObj.changeValueAsync(value);
+              return true;
+            } catch (_e) {
+              /* try next shape */
+            }
+          }
+        }
+
+        if (wb && typeof wb.changeParameterValueAsync === "function") {
+          for (const value of candidateValues) {
+            try {
+              await wb.changeParameterValueAsync(apiName, value);
+              return true;
+            } catch (_e) {
+              /* try next */
+            }
+          }
+        }
+
+        if (typeof vizElement.changeParameterValueAsync === "function") {
+          for (const value of candidateValues) {
+            try {
+              await vizElement.changeParameterValueAsync(apiName, value);
+              return true;
+            } catch (_e) {
+              /* try next */
+            }
+          }
+        }
+
+        if (apiName !== paramName && wb && typeof wb.changeParameterValueAsync === "function") {
+          for (const value of candidateValues) {
+            try {
+              await wb.changeParameterValueAsync(paramName, value);
+              return true;
+            } catch (_e) {
+              /* try next */
+            }
+          }
+        }
+
+        if (apiName !== paramName && typeof vizElement.changeParameterValueAsync === "function") {
+          for (const value of candidateValues) {
+            try {
+              await vizElement.changeParameterValueAsync(paramName, value);
+              return true;
+            } catch (_e) {
+              /* try next */
+            }
+          }
+        }
+
+        console.warn("Unable to apply Tableau parameter", paramName, {
+          selected: metricNum,
+          label,
+          apiName,
+          tried: candidateValues,
+          parameterFound: !!paramObj,
+        });
+        return false;
+      }
+
+      async function applyMetricListParameterByKey(vizElement, configKey) {
+        const def = metricListParameterOverlayConfig.find((item) => item.key === configKey);
+        if (!def) return false;
+        const selected = metricListSelection[configKey];
+        return applyTableauListStyleParameter(vizElement, def.paramName, selected, def.options);
+      }
+
+      async function applyChemistrySigParameter(vizElement) {
+        return applyTableauListStyleParameter(
+          vizElement,
+          CHEMISTRY_SIG_PARAM,
+          chemistrySigSelection,
+          CHEMISTRY_SIG_OPTIONS
+        );
+      }
+
+      function readChemistrySigLayout() {
+        if (!CHEMISTRY_SIG_LAYOUT_TOOL_ENABLED) {
+          return { ...CHEMISTRY_SIG_LAYOUT_DEFAULTS };
+        }
+        try {
+          const raw = localStorage.getItem(CHEMISTRY_SIG_LAYOUT_STORAGE_KEY);
+          if (!raw) return { ...CHEMISTRY_SIG_LAYOUT_DEFAULTS };
+          const parsed = JSON.parse(raw);
+          return {
+            left: Number.isFinite(Number(parsed.left)) ? Number(parsed.left) : CHEMISTRY_SIG_LAYOUT_DEFAULTS.left,
+            top: Number.isFinite(Number(parsed.top)) ? Number(parsed.top) : CHEMISTRY_SIG_LAYOUT_DEFAULTS.top,
+          };
+        } catch (_err) {
+          return { ...CHEMISTRY_SIG_LAYOUT_DEFAULTS };
+        }
+      }
+
+      function writeChemistrySigLayout(layout) {
+        try {
+          localStorage.setItem(CHEMISTRY_SIG_LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+        } catch (_err) {
+          /* ignore */
+        }
+      }
+
+      function positionChemistrySigPanel(slot) {
+        const panel = slot.querySelector(".chemistry-sig-float-panel");
+        if (!panel) return;
+        const L = readChemistrySigLayout();
+        panel.style.left = L.left + "px";
+        panel.style.top = L.top + "px";
+      }
+
+      function renderChemistrySigLayoutTool(slot) {
+        if (!CHEMISTRY_SIG_LAYOUT_TOOL_ENABLED) return;
+        if (slot.querySelector(".chemistry-sig-layout-tool")) return;
+
+        const layout = readChemistrySigLayout();
+        const wrap = document.createElement("div");
+        wrap.className = "chemistry-sig-layout-tool";
+        wrap.setAttribute("aria-label", "Chemistry significance overlay position");
+
+        const title = document.createElement("div");
+        title.className = "chemistry-sig-layout-tool__title";
+        title.textContent = "Stat-sig overlay position";
+        wrap.appendChild(title);
+
+        const readout = document.createElement("pre");
+        readout.className = "chemistry-sig-layout-tool__readout";
+
+        const syncReadout = () => {
+          const L = readChemistrySigLayout();
+          readout.textContent =
+            "Paste over CHEMISTRY_SIG_LAYOUT_DEFAULTS:\n\n" +
+            `const CHEMISTRY_SIG_LAYOUT_DEFAULTS = {\n  left: ${L.left},\n  top: ${L.top},\n};`;
+        };
+
+        const applyFromInputs = () => {
+          const next = {
+            left: Math.max(0, Math.min(1600, Number(inpLeft.value) || 0)),
+            top: Math.max(0, Math.min(8000, Number(inpTop.value) || 0)),
+          };
+          inpLeft.value = String(next.left);
+          rngLeft.value = String(next.left);
+          inpTop.value = String(next.top);
+          rngTop.value = String(next.top);
+          writeChemistrySigLayout(next);
+          positionChemistrySigPanel(slot);
+          syncReadout();
+        };
+
+        function row(labelText, inp, rng, min, max, step) {
+          const rowEl = document.createElement("label");
+          rowEl.className = "chemistry-sig-layout-tool__row";
+          const span = document.createElement("span");
+          span.textContent = labelText;
+          inp.type = "number";
+          inp.step = String(step);
+          inp.className = "chemistry-sig-layout-tool__num";
+          rng.type = "range";
+          rng.min = String(min);
+          rng.max = String(max);
+          rng.step = String(step);
+          rng.className = "chemistry-sig-layout-tool__range";
+          rowEl.appendChild(span);
+          rowEl.appendChild(inp);
+          rowEl.appendChild(rng);
+          wrap.appendChild(rowEl);
+        }
+
+        const inpLeft = document.createElement("input");
+        const rngLeft = document.createElement("input");
+        const inpTop = document.createElement("input");
+        const rngTop = document.createElement("input");
+
+        inpLeft.value = String(layout.left);
+        rngLeft.value = String(layout.left);
+        inpTop.value = String(layout.top);
+        rngTop.value = String(layout.top);
+
+        row("Left (px)", inpLeft, rngLeft, 0, 1600, 1);
+        row("Top (px)", inpTop, rngTop, 0, 8000, 1);
+
+        wrap.appendChild(readout);
+        syncReadout();
+
+        const hint = document.createElement("div");
+        hint.className = "chemistry-sig-layout-tool__hint";
+        hint.textContent =
+          "Adjust relative to the viz slot. Paste into the file, set CHEMISTRY_SIG_LAYOUT_TOOL_ENABLED to false, and clear localStorage for this key if file defaults should win.";
+        wrap.appendChild(hint);
+
+        [inpLeft, rngLeft, inpTop, rngTop].forEach((el) => {
+          el.addEventListener("input", applyFromInputs);
+        });
+
+        slot.appendChild(wrap);
+      }
+
+      function renderChemistrySignificanceControl(slot, vizElement) {
+        const canApply =
+          !!vizElement &&
+          (!!vizElement.workbook || typeof vizElement.changeParameterValueAsync === "function");
+
+        let panel = slot.querySelector(".chemistry-sig-float-panel");
+        if (!panel) {
+          const pos = readChemistrySigLayout();
+          panel = document.createElement("div");
+          panel.className = "chemistry-sig-float-panel";
+          panel.setAttribute("role", "group");
+          panel.setAttribute("aria-label", "Statistical significance filter");
+          panel.style.left = pos.left + "px";
+          panel.style.top = pos.top + "px";
+
+          const optionsWrap = document.createElement("div");
+          optionsWrap.className = "chemistry-sig-float-options";
+
+          CHEMISTRY_SIG_OPTIONS.forEach((opt) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "metric-float-option";
+            btn.textContent = opt.label;
+            btn.dataset.sigValue = String(opt.value);
+            btn.addEventListener("click", async () => {
+              const viz = slot.querySelector("tableau-viz");
+              if (!viz) return;
+              chemistrySigSelection = opt.value;
+              optionsWrap.querySelectorAll(".metric-float-option").forEach((b) => {
+                b.classList.toggle("is-active", b.dataset.sigValue === String(opt.value));
+              });
+              await applyChemistrySigParameter(viz);
+            });
+            optionsWrap.appendChild(btn);
+          });
+          panel.appendChild(optionsWrap);
+          slot.appendChild(panel);
+        }
+
+        positionChemistrySigPanel(slot);
+        renderChemistrySigLayoutTool(slot);
+
+        const wrap = panel.querySelector(".chemistry-sig-float-options");
+        if (wrap) {
+          wrap.querySelectorAll(".metric-float-option").forEach((btn) => {
+            btn.disabled = !canApply;
+            btn.classList.toggle(
+              "is-active",
+              Number(btn.dataset.sigValue) === Number(chemistrySigSelection)
+            );
+          });
+        }
+      }
+
+      async function applyAllMetricListParametersToViz(vizElement) {
+        for (const def of metricListParameterOverlayConfig) {
+          await applyMetricListParameterByKey(vizElement, def.key);
+        }
+      }
+
+      function renderFloatingMetricPicker(slot, key, vizElement) {
+        const pickerConfigs = metricListParameterOverlayConfig.map((def) => ({
+          configKey: def.key,
+          panelTitle: def.panelTitle,
+          panelAriaLabel: def.panelAriaLabel || (def.panelTitle && String(def.panelTitle).trim()) || "Metric selector",
+          options: def.options.map((option) => ({
+            label: option.label,
+            value: String(option.value),
+            isInteractive: true,
+          })),
+        }));
+
+        pickerConfigs.forEach((config, panelIndex) => {
+          const panel = document.createElement("div");
+          panel.className = "metric-float-panel";
+          panel.setAttribute("role", "group");
+          panel.setAttribute("aria-label", config.panelAriaLabel);
+          panel.style.left = metricPickerPosition.x + "px";
+          panel.style.top = metricPickerPosition.y + panelIndex * METRIC_PICKER_VERTICAL_GAP + "px";
+
+          if (config.panelTitle && String(config.panelTitle).trim()) {
+            const title = document.createElement("div");
+            title.className = "metric-float-title";
+            title.textContent = config.panelTitle;
+            panel.appendChild(title);
+          }
+
+          const optionsWrap = document.createElement("div");
+          optionsWrap.className = "metric-float-options";
+
+          const configKey = config.configKey;
+          const selectedForPanel = Number(metricListSelection[configKey]);
+
+          config.options.forEach((option) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "metric-float-option";
+            button.textContent = option.label;
+            button.dataset.metricValue = option.value;
+            if (Number(option.value) === selectedForPanel) button.classList.add("is-active");
+            button.setAttribute("aria-pressed", Number(option.value) === selectedForPanel ? "true" : "false");
+
+            button.addEventListener("click", async () => {
+              metricListSelection[configKey] = Number(option.value);
+              optionsWrap.querySelectorAll(".metric-float-option").forEach((item) => {
+                const on = item.dataset.metricValue === option.value;
+                item.classList.toggle("is-active", on);
+                item.setAttribute("aria-pressed", on ? "true" : "false");
+              });
+              await applyMetricListParameterByKey(vizElement, configKey);
+            });
+            optionsWrap.appendChild(button);
+          });
+
+          panel.appendChild(optionsWrap);
+          slot.appendChild(panel);
+        });
+
+        requestAnimationFrame(() => {
+          applyMetricOptionsMaxHeight(slot, key);
+          requestAnimationFrame(() => applyMetricOptionsMaxHeight(slot, key));
+        });
+      }
+
+      function renderSegmentFilter(slot, key, vizElement) {
+        const helperSheet = getAgentNameHelperSheet(key);
+        let panel = slot.querySelector(".segment-float-panel");
+        let agentSelect;
+        let status;
+        if (!panel) {
+          const selectId = "c0-agent-name-" + String(key || "embed").replace(/[^a-zA-Z0-9_-]/g, "-");
+          panel = document.createElement("div");
+          panel.className = "segment-float-panel";
+          panel.style.left = segmentPanelPosition.x + "px";
+          panel.style.top = segmentPanelPosition.y + "px";
+
+          const titleRow = document.createElement("div");
+          titleRow.className = "segment-float-title-row";
+
+          const title = document.createElement("label");
+          title.className = "segment-float-title";
+          title.setAttribute("for", selectId);
+          title.textContent = "Agent name";
+          titleRow.appendChild(title);
+
+          const agentNameInfo = document.createElement("button");
+          agentNameInfo.type = "button";
+          agentNameInfo.className = "segment-float-info";
+          agentNameInfo.setAttribute("aria-label", "Help");
+          const tipId = "c0-agent-name-help-" + String(key || "embed").replace(/[^a-zA-Z0-9_-]/g, "-");
+          const agentNameTip = document.createElement("span");
+          agentNameTip.id = tipId;
+          agentNameTip.className = "segment-float-info__tooltip";
+          agentNameTip.setAttribute("role", "tooltip");
+          agentNameTip.textContent = AGENT_NAME_HELP_TEXT;
+          agentNameInfo.setAttribute("aria-describedby", tipId);
+          const agentNameInfoSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          agentNameInfoSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+          agentNameInfoSvg.setAttribute("width", "16");
+          agentNameInfoSvg.setAttribute("height", "16");
+          agentNameInfoSvg.setAttribute("viewBox", "0 0 24 24");
+          agentNameInfoSvg.setAttribute("fill", "none");
+          agentNameInfoSvg.setAttribute("stroke", "currentColor");
+          agentNameInfoSvg.setAttribute("stroke-width", "2");
+          agentNameInfoSvg.setAttribute("stroke-linecap", "round");
+          agentNameInfoSvg.setAttribute("stroke-linejoin", "round");
+          agentNameInfoSvg.setAttribute("aria-hidden", "true");
+          [["circle", { cx: "12", cy: "12", r: "10" }], ["path", { d: "M12 16v-4" }], ["path", { d: "M12 8h.01" }]].forEach(
+            ([tag, attrs]) => {
+              const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+              Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+              agentNameInfoSvg.appendChild(el);
+            }
+          );
+          agentNameInfo.appendChild(agentNameInfoSvg);
+          agentNameInfo.appendChild(agentNameTip);
+          titleRow.appendChild(agentNameInfo);
+
+          panel.appendChild(titleRow);
+
+          agentSelect = document.createElement("select");
+          agentSelect.id = selectId;
+          agentSelect.className = "segment-float-select";
+          panel.appendChild(agentSelect);
+
+          status = document.createElement("div");
+          status.className = "segment-float-status";
+          status.textContent = "Loading agent names...";
+          panel.appendChild(status);
+
+          slot.appendChild(panel);
+        } else {
+          agentSelect = panel.querySelector(".segment-float-select");
+          status = panel.querySelector(".segment-float-status");
+        }
+
+        const renderOptions = (values) => {
+          agentSelect.innerHTML = "";
+          let list = values
+            .map((v) => String(v == null ? "" : v).trim())
+            .filter((v) => v.length > 0);
+          const listHas = (name) => {
+            const p = String(name == null ? "" : name).trim();
+            return list.some((x) => String(x).trim() === p);
+          };
+          if (!listHas(AGENT_NAME_DEFAULT)) {
+            list = [AGENT_NAME_DEFAULT].concat(list);
+          }
+          const cur = String(selectedAgentNameValue || AGENT_NAME_DEFAULT).trim() || AGENT_NAME_DEFAULT;
+          if (values.length === 0) {
+            /**
+             * Pre-interactive shell (`renderSegmentFilter(..., null)`) passes `[]`.
+             * Do not clobber `selectedAgentNameValue` from another tab; add an option so the `<select>` can show it.
+             */
+            if (!listHas(cur)) {
+              list = [cur].concat(list);
+            }
+          } else if (!listHas(cur)) {
+            selectedAgentNameValue = AGENT_NAME_DEFAULT;
+          }
+          list.sort((a, b) =>
+            String(a).localeCompare(String(b), undefined, { sensitivity: "base", numeric: true })
+          );
+          list.forEach((value) => {
+            const node = document.createElement("option");
+            node.value = value;
+            node.textContent = value;
+            agentSelect.appendChild(node);
+          });
+          const want = String(selectedAgentNameValue || AGENT_NAME_DEFAULT).trim() || AGENT_NAME_DEFAULT;
+          agentSelect.value = listHas(want) ? want : AGENT_NAME_DEFAULT;
+          selectedAgentNameValue = agentSelect.value || AGENT_NAME_DEFAULT;
+        };
+
+        // Show shell immediately, hydrate only after Tableau is interactive.
+        const canHydrate =
+          !!vizElement && (!!vizElement.workbook || typeof vizElement.changeParameterValueAsync === "function");
+        if (!canHydrate) {
+          renderOptions([]);
+          agentSelect.disabled = true;
+          if (status) status.textContent = "Loading agent names...";
+          panel.dataset.hydrated = "false";
+          return;
+        }
+        if (panel.dataset.hydrated === "true") {
+          syncWebPropertyAgentOverlayVisibility(slot, key);
+          return;
+        }
+        panel.dataset.hydrated = "true";
+
+        agentSelect.onchange = async () => {
+          selectedAgentNameValue = agentSelect.value || AGENT_NAME_DEFAULT;
+          syncWebPropertyAgentOverlayVisibility(slot, key);
+          try {
+            await applyAgentNameParameterToViz(vizElement, selectedAgentNameValue);
+          } catch (_e) {
+            /* visibility already reflects dropdown; Tableau apply failed */
+          }
+          syncWebPropertyAgentOverlayVisibility(slot, key);
+        };
+
+        fetchAgentNameParameterOptions(vizElement, helperSheet)
+          .then(async (values) => {
+            if (!values.length) {
+              status.textContent = 'No values found in worksheet "' + helperSheet + '". Using default only.';
+              renderOptions([]);
+              agentSelect.disabled = false;
+              selectedAgentNameValue = AGENT_NAME_DEFAULT;
+              await applyAgentNameParameterToViz(vizElement, selectedAgentNameValue);
+              syncWebPropertyAgentOverlayVisibility(slot, key);
+              return;
+            }
+            status.textContent = "";
+            renderOptions(values);
+            agentSelect.disabled = false;
+            await applyAgentNameParameterToViz(vizElement, selectedAgentNameValue);
+            syncWebPropertyAgentOverlayVisibility(slot, key);
+          })
+          .catch(async (_err) => {
+            status.textContent = 'Unable to load worksheet "' + helperSheet + '" right now.';
+            selectedAgentNameValue = AGENT_NAME_DEFAULT;
+            renderOptions([]);
+            agentSelect.disabled = true;
+            await applyAgentNameParameterToViz(vizElement, AGENT_NAME_DEFAULT);
+            syncWebPropertyAgentOverlayVisibility(slot, key);
+          });
+      }
+
+      function scrollHostPageToTop() {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        const root = document.scrollingElement || document.documentElement;
+        if (root) root.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+      }
+
+      function debounce(fn, waitMs) {
+        let t = null;
+        return function debounced() {
+          clearTimeout(t);
+          t = setTimeout(fn, waitMs);
+        };
+      }
+
+      /**
+       * Tableau Embedding API v3.11+ exposes resize() on the viz element; required after zoom / tab
+       * changes so the iframe matches the host box (see Tableau embedding resize guidance).
+       */
+      function tryTableauVizResize(viz) {
+        if (!viz) return;
+        try {
+          if (typeof viz.resize === "function") {
+            viz.resize();
+            return;
+          }
+        } catch (_e) {
+          /* ignore */
+        }
+        try {
+          if (viz.workbook && typeof viz.workbook.resize === "function") {
+            viz.workbook.resize();
+          }
+        } catch (_e2) {
+          /* ignore */
+        }
+      }
+
+      /** Calling resize() before the workbook exists can skew the iframe layout. */
+      function tableauVizIsInteractive(viz) {
+        if (!viz) return false;
+        try {
+          return !!viz.workbook;
+        } catch (_e) {
+          return false;
+        }
+      }
+
+      function tryTableauVizResizeIfInteractive(viz) {
+        if (!tableauVizIsInteractive(viz)) return;
+        tryTableauVizResize(viz);
+      }
+
+      /** Native workbook pixel size on the host (must match CSS --viz-width / --viz-tableau-height). */
+      const FIXED_TABLEAU_EMBED_WIDTH_PX = 1600;
+
+      /**
+       * macOS Chrome: Cmd± page zoom often does not change devicePixelRatio; a fresh `tableau-viz` can
+       * paint the iframe at the wrong scale while host overlays follow CSS zoom. We snapshot layout
+       * ratios once at first load and derive an effective zoom factor; `transform: scale(z)` + smaller
+       * layout box corrects only embeds mounted while zoom ≠ 100% (`data-c0-zoom-bridge`) so Rubric
+       * that was loaded at 100% then zoomed in-place is not double-scaled.
+       *
+       * Known gap (paused): behavior can still be wrong after zoom + tab switch; org Chrome may block
+       * console diagnostics. Pragmatic workaround: full reload after changing zoom. Long-term: Tableau
+       * / browser vendor on embed scale vs page zoom when the viz mounts on a newly shown tab.
+       */
+      function initC0PageZoomBaselines() {
+        if (window.__c0PageZoomBaselines) return;
+        const iw = window.innerWidth || 0;
+        if (iw < 2) return;
+        const ow = window.outerWidth || iw;
+        const vv = window.visualViewport;
+        window.__c0PageZoomBaselines = {
+          dpr: window.devicePixelRatio || 1,
+          oi: ow / iw,
+          vviw: vv && vv.width > 0 ? vv.width / iw : 1,
+        };
+      }
+
+      function clampTableauZoom(z) {
+        if (!Number.isFinite(z) || z < 0.5) return 1;
+        if (z > 3) return 3;
+        return z;
+      }
+
+      function getTableauPageZoomFactor() {
+        initC0PageZoomBaselines();
+        const b = window.__c0PageZoomBaselines;
+        if (!b) return 1;
+        const zDpr = (window.devicePixelRatio || 1) / b.dpr;
+        if (Math.abs(zDpr - 1) >= 0.02) {
+          return clampTableauZoom(zDpr);
+        }
+        const iw = window.innerWidth || 1;
+        const vv = window.visualViewport;
+        if (vv && iw > 0 && b.vviw > 0) {
+          const nowVviw = vv.width / iw;
+          const zVv = nowVviw / b.vviw;
+          if (Math.abs(zVv - 1) >= 0.02) {
+            return clampTableauZoom(zVv);
+          }
+        }
+        const nowOi = (window.outerWidth || 1) / iw;
+        const zOi = nowOi / b.oi;
+        if (Math.abs(zOi - 1) >= 0.025) {
+          return clampTableauZoom(zOi);
+        }
+        return 1;
+      }
+
+      /**
+       * After browser zoom, Tableau on a *new* tab can initialize at the wrong scale vs host overlays.
+       * We bump a monotonic token when zoom-related signals change (not on every tab switch) and append
+       * it to the embed URL so each mount matches the current zoom.
+       *
+       * Desktop 100%→125% often leaves devicePixelRatio and visualViewport.scale unchanged; we also use
+       * innerWidth, clientWidth, outer/inner ratio, and visualViewport.width (bucketed) so the signature
+       * actually changes. `resize` updates this synchronously (see listeners below), not only debounced.
+       */
+      let __c0EmbedZoomSnap = null;
+
+      function getC0EmbedZoomSignature() {
+        const dpr = (window.devicePixelRatio || 1).toFixed(4);
+        const vv = window.visualViewport;
+        const sc = vv && typeof vv.scale === "number" ? vv.scale.toFixed(4) : "1.0000";
+        const de = document.documentElement;
+        const cw = de && de.clientWidth ? de.clientWidth : window.innerWidth;
+        const iw = window.innerWidth || 0;
+        const ow = window.outerWidth || 0;
+        const ratioK = iw > 0 ? Math.round((ow / iw) * 1000) : 0;
+        const parts = [
+          dpr,
+          sc,
+          String(Math.round(cw / 28)),
+          String(Math.round(iw / 28)),
+          String(ratioK),
+        ];
+        if (vv && typeof vv.width === "number" && vv.width > 0) {
+          parts.push(String(Math.round(vv.width / 28)));
+        }
+        return parts.join("_");
+      }
+
+      function refreshC0EmbedZoomRevision() {
+        const next = getC0EmbedZoomSignature();
+        if (__c0EmbedZoomSnap == null) {
+          __c0EmbedZoomSnap = next;
+          return;
+        }
+        if (next !== __c0EmbedZoomSnap) {
+          __c0EmbedZoomSnap = next;
+          window.__c0TableauZoomToken = (window.__c0TableauZoomToken || 0) + 1;
+        }
+      }
+
+      function buildTableauSrcWithHostContext(src) {
+        refreshC0EmbedZoomRevision();
+        const zt = window.__c0TableauZoomToken || 0;
+        let out = src.includes("?") ? src + "&refresh=y" : src + "?refresh=y";
+        out += "&_c0_zt=" + encodeURIComponent(String(zt));
+        return out;
+      }
+
+      function applyFixedTableauEmbedBox(viz, heightPx) {
+        if (!viz) return;
+        const h = Math.round(Number(heightPx) > 0 ? heightPx : 2600);
+        const w = FIXED_TABLEAU_EMBED_WIDTH_PX;
+        const z = getTableauPageZoomFactor();
+        const useBridge = viz.getAttribute("data-c0-zoom-bridge") === "1";
+        viz.setAttribute("width", String(w));
+        viz.setAttribute("height", String(h));
+        viz.style.transformOrigin = "0 0";
+        if (!useBridge || Math.abs(z - 1) < 0.015) {
+          viz.style.transform = "";
+          viz.style.width = w + "px";
+          viz.style.minWidth = w + "px";
+          viz.style.maxWidth = w + "px";
+          viz.style.height = h + "px";
+          viz.style.minHeight = h + "px";
+          return;
+        }
+        viz.style.transform = "scale(" + z + ")";
+        const lw = w / z;
+        const lh = h / z;
+        viz.style.width = lw + "px";
+        viz.style.minWidth = lw + "px";
+        viz.style.maxWidth = lw + "px";
+        viz.style.height = lh + "px";
+        viz.style.minHeight = lh + "px";
+      }
+
+      /**
+       * Re-measure host overlays after browser zoom, window resize, or showing a tab that was display:none.
+       * Zoom updates visualViewport; absolute overlays + Tableau sizing must catch up.
+       */
+      function reflowActiveTableauOverlays() {
+        const page = document.querySelector(".page.is-active");
+        if (!page) return;
+        const slot = page.querySelector("[data-tableau-slot]");
+        const key = page.getAttribute("data-embed-key");
+        if (!slot || !key) return;
+
+        const viz = slot.querySelector("tableau-viz");
+        const overlays = customOverlaysByEmbedKey[key] || {};
+
+        if (overlays.metricPickers) {
+          applyMetricOptionsMaxHeight(slot, key);
+          requestAnimationFrame(() => applyMetricOptionsMaxHeight(slot, key));
+        }
+        if (overlays.deepDiveButtons && deepDiveConfig[key]) {
+          positionDeepDiveButtons(slot, key);
+          requestAnimationFrame(() => positionDeepDiveButtons(slot, key));
+        }
+        if (overlays.chemistrySignificance) {
+          positionChemistrySigPanel(slot);
+          renderChemistrySignificanceControl(slot, viz || null);
+        }
+
+        if (key === "agentRubric") {
+          syncWebPropertyAgentOverlayVisibility(slot, key);
+        }
+
+        if (viz) {
+          try {
+            viz.dispatchEvent(new CustomEvent("tableau-host-reflow", { bubbles: false }));
+          } catch (_e) {
+            /* ignore */
+          }
+          const h = viz.style.height;
+          if (h && h !== "0px") {
+            viz.style.minHeight = h;
+            void viz.offsetWidth;
+          }
+        }
+      }
+
+      /** Reflow host overlays; Tableau.resize() only after the workbook exists (avoids bad first paint). */
+      function syncTableauHostLayout() {
+        const page = document.querySelector(".page.is-active");
+        const slot = page?.querySelector("[data-tableau-slot]");
+        const key = page?.getAttribute("data-embed-key") || "";
+        const viz = slot?.querySelector("tableau-viz");
+        if (viz && key) {
+          applyFixedTableauEmbedBox(viz, tableauHeights[key] || 2600);
+        }
+        tryTableauVizResizeIfInteractive(viz);
+        reflowActiveTableauOverlays();
+        tryTableauVizResizeIfInteractive(viz);
+        requestAnimationFrame(() => {
+          if (viz && key) {
+            applyFixedTableauEmbedBox(viz, tableauHeights[key] || 2600);
+          }
+          tryTableauVizResizeIfInteractive(viz);
+          reflowActiveTableauOverlays();
+        });
+      }
+
+      const debouncedTableauOverlayReflow = debounce(syncTableauHostLayout, 120);
+
+      function onWindowOrViewportResize() {
+        refreshC0EmbedZoomRevision();
+        positionQuickViewsUnderParent(currentQuickGroup || "overview");
+        const page = document.querySelector(".page.is-active");
+        const slot = page?.querySelector("[data-tableau-slot]");
+        const key = page?.getAttribute("data-embed-key") || "";
+        const vz = slot?.querySelector("tableau-viz");
+        if (vz && key) {
+          applyFixedTableauEmbedBox(vz, tableauHeights[key] || 2600);
+        }
+        tryTableauVizResizeIfInteractive(vz);
+        debouncedTableauOverlayReflow();
+      }
+
+      const debouncedWindowOrViewportResize = debounce(onWindowOrViewportResize, 120);
+
+      function mountTableau(page) {
+        const slot = page.querySelector("[data-tableau-slot]");
+        const key = page.getAttribute("data-embed-key");
+        const localPageSourcesRaw = localPageEmbeds[key];
+        const localPageCandidates = Array.isArray(localPageSourcesRaw)
+          ? localPageSourcesRaw.filter((item) => !!String(item || "").trim())
+          : String(localPageSourcesRaw || "").trim()
+            ? [String(localPageSourcesRaw).trim()]
+            : [];
+        const src = resolveTableauEmbedSrc(tableauEmbeds[key]);
+        slot.innerHTML = "";
+        slot.classList.remove("overlays-pending");
+        slot.style.position = "relative";
+        const vizHeight = tableauHeights[key] || 2200;
+        slot.style.minHeight = vizHeight + "px";
+
+        if (localPageCandidates.length) {
+          const frame = document.createElement("iframe");
+          frame.className = "local-page-frame";
+          frame.setAttribute("title", "Email Coach API");
+          frame.setAttribute("loading", "lazy");
+          let localPageIndex = 0;
+          frame.style.visibility = "hidden";
+          const setFrameSrc = () => {
+            frame.src = localPageCandidates[localPageIndex] || "";
+          };
+          frame.style.height = vizHeight + "px";
+          frame.addEventListener("load", () => {
+            try {
+              const doc = frame.contentDocument;
+              const title = normalizeText(doc?.title || "");
+              const bodyText = normalizeText((doc?.body?.innerText || "").slice(0, 500));
+              const looksNotFound =
+                title.includes("not found") ||
+                bodyText.includes("requested url was not found") ||
+                bodyText.includes("404");
+              if (looksNotFound && localPageIndex < localPageCandidates.length - 1) {
+                localPageIndex += 1;
+                setFrameSrc();
+                return;
+              }
+              if (looksNotFound && localPageIndex >= localPageCandidates.length - 1) {
+                // Nothing else to try; show the frame so user can see the error content.
+                frame.style.visibility = "visible";
+                return;
+              }
+            } catch (_err) {
+              // Ignore access issues and continue with current source.
+              frame.style.visibility = "visible";
+            }
+            const syncFrameHeight = () => {
+              try {
+                const doc = frame.contentDocument;
+                if (!doc) return;
+                const bodyHeight = doc.body ? doc.body.scrollHeight : 0;
+                const nextHeight = Math.max(vizHeight, doc.documentElement.scrollHeight, bodyHeight);
+                frame.style.height = nextHeight + "px";
+                slot.style.minHeight = nextHeight + "px";
+              } catch (_err) {
+                // Ignore iframe sizing restrictions if browser blocks access.
+              }
+            };
+            syncFrameHeight();
+            frame.style.visibility = "visible";
+            [250, 800, 1500, 3000, 5000].forEach((delayMs) => {
+              setTimeout(syncFrameHeight, delayMs);
+            });
+          });
+          setFrameSrc();
+          slot.appendChild(frame);
+          return;
+        }
+
+        if (!src) {
+          const placeholder = document.createElement("div");
+          placeholder.className = "placeholder";
+          placeholder.innerHTML =
+            "Add a view slug (e.g. <code>MyView</code>) or full Tableau URL for <code>" +
+            key +
+            "</code> in <code>tableauEmbeds</code>. Slugs resolve against <code>TABLEAU_VIEWS_BASE</code>.";
+          slot.appendChild(placeholder);
+          return;
+        }
+
+        const overlays = customOverlaysByEmbedKey[key] || {};
+
+        const viz = document.createElement("tableau-viz");
+        /**
+         * Tableau defaults device layout to the iframe's *smallest* dimension when `device` is omitted.
+         * On macOS Chrome at non‑100% page zoom, a newly shown tab can report a wrong size at init, so
+         * the wrong layout/scaling loads while host overlays follow normal CSS zoom (Embedding API docs).
+         * `device="desktop"` pins the desktop workbook layout; `iframe-attr-loading="eager"` avoids the
+         * default lazy load deferring init while the tab was `display:none`.
+         */
+        viz.setAttribute("device", "desktop");
+        viz.setAttribute("iframe-attr-loading", "eager");
+        viz.setAttribute("toolbar", "hidden");
+        viz.setAttribute("hide-tabs", "");
+        const zMount = getTableauPageZoomFactor();
+        if (Math.abs(zMount - 1) >= 0.015) {
+          viz.setAttribute("data-c0-zoom-bridge", "1");
+        }
+        applyFixedTableauEmbedBox(viz, vizHeight);
+
+        viz.addEventListener("firstinteractive", async () => {
+          slot.classList.remove("overlays-pending");
+          positionQuickViewsUnderParent(currentQuickGroup || "overview");
+          applyFixedTableauEmbedBox(viz, vizHeight);
+          tryTableauVizResize(viz);
+          if (overlays.metricPickers) {
+            await applyAllMetricListParametersToViz(viz);
+          }
+          if (overlays.segmentFilter) renderSegmentFilter(slot, key, viz);
+          if (overlays.chemistrySignificance) {
+            renderChemistrySignificanceControl(slot, viz);
+            await applyChemistrySigParameter(viz);
+          }
+
+          const snapScrollAfterViz = () => {
+            scrollHostPageToTop();
+            requestAnimationFrame(() => {
+              scrollHostPageToTop();
+              requestAnimationFrame(scrollHostPageToTop);
+            });
+            [120, 400, 1000].forEach((ms) => setTimeout(scrollHostPageToTop, ms));
+          };
+          snapScrollAfterViz();
+          syncTableauHostLayout();
+          requestAnimationFrame(() => {
+            syncTableauHostLayout();
+            requestAnimationFrame(syncTableauHostLayout);
+          });
+          [120, 350, 700, 1400, 2800].forEach((ms) => setTimeout(syncTableauHostLayout, ms));
+        });
+
+        slot.appendChild(viz);
+        // Host overlays mount immediately; `overlays-pending` keeps them non-interactive until `firstinteractive`.
+        slot.classList.add("overlays-pending");
+        if (overlays.metricPickers) renderFloatingMetricPicker(slot, key, viz);
+        if (overlays.deepDiveButtons) renderDeepDiveButton(slot, key);
+        if (overlays.segmentFilter) renderSegmentFilter(slot, key, null);
+        if (overlays.chemistrySignificance) renderChemistrySignificanceControl(slot, null);
+        if (key === "agentRubric") {
+          syncWebPropertyAgentOverlayVisibility(slot, key);
+        }
+        const layoutFixedTableau = () => {
+          applyFixedTableauEmbedBox(viz, vizHeight);
+          tryTableauVizResizeIfInteractive(viz);
+        };
+        const startTableauSrc = () => {
+          if (!viz.isConnected) return;
+          viz.setAttribute("src", buildTableauSrcWithHostContext(src));
+          layoutFixedTableau();
+          requestAnimationFrame(() => {
+            layoutFixedTableau();
+            requestAnimationFrame(layoutFixedTableau);
+          });
+        };
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setTimeout(startTableauSrc, 48);
+          });
+        });
+      }
+
+      function showTab(tabId) {
+        const defaultId = pages[0].id;
+        const nextId = pages.some((p) => p.id === tabId) ? tabId : defaultId;
+        const activePage = pages.find((p) => p.id === nextId);
+        const activeGroup = activePage ? (activePage.getAttribute("data-embed-key") || "").replace(/[A-Z].*/, "") : "";
+        const pageToGroup = {
+          "agent-rubric": "overview",
+          "overview-metric-chemistry": "overview",
+          "overview-topic-diagnostics": "overview",
+          "efficacy-response-quality": "efficacy",
+          "efficacy-user-sentiment": "efficacy",
+          "efficacy-topic-collision": "efficacy",
+          "performance-latency": "performance",
+          "engagement-flywheel": "engagement",
+          "engagement-key-metrics": "engagement",
+          "business-value-time-savings": "business-value",
+          "innovation-lab-email-coach-api": "innovation-lab",
+        };
+        const selectedGroup = pageToGroup[nextId] || activeGroup;
+        setQuickViewGroup(selectedGroup);
+
+        refreshC0EmbedZoomRevision();
+
+        pages.forEach((page) => {
+          const active = page.id === nextId;
+          page.classList.toggle("is-active", active);
+          if (active) mountTableau(page);
+        });
+
+        try {
+          localStorage.setItem(TAB_STORAGE_KEY, nextId);
+        } catch (_err) {
+          // Ignore storage write errors in restricted browser modes.
+        }
+
+        links.forEach((link) => {
+          const hrefMatch = link.getAttribute("href") === "#" + nextId;
+          const sameGroup = link.getAttribute("data-tab-group") === selectedGroup;
+          const isMainTab = link.classList.contains("tab-link");
+          if (isMainTab) {
+            link.classList.toggle("is-active", hrefMatch || sameGroup);
+          } else {
+            link.classList.toggle("is-active", hrefMatch);
+          }
+          if (hrefMatch) link.setAttribute("aria-current", "page");
+          else link.removeAttribute("aria-current");
+        });
+
+        scrollHostPageToTop();
+        const tabLabel = dashboardCatalog.find((d) => d.id === nextId)?.label || nextId;
+        document.title = "Customer Zero Observability — " + tabLabel;
+
+        syncTableauHostLayout();
+        requestAnimationFrame(() => syncTableauHostLayout());
+        setTimeout(syncTableauHostLayout, 120);
+        const sg = selectedGroup;
+        [220, 550, 1400].forEach((ms) => {
+          setTimeout(() => {
+            positionQuickViewsUnderParent(sg);
+            syncTableauHostLayout();
+          }, ms);
+        });
+      }
+
+      function getInitialTabId() {
+        const hashId = window.location.hash.replace("#", "");
+        if (hashId && pages.some((p) => p.id === hashId)) return hashId;
+        try {
+          const savedId = localStorage.getItem(TAB_STORAGE_KEY) || "";
+          if (savedId && pages.some((p) => p.id === savedId)) return savedId;
+        } catch (_err) {
+          // Ignore storage read errors.
+        }
+        return pages[0]?.id || "";
+      }
+
+      function onRouteChange(useInitial = false) {
+        const tabId = useInitial ? getInitialTabId() : window.location.hash.replace("#", "");
+        showTab(tabId);
+        if (tabId && window.location.hash.replace("#", "") !== tabId) {
+          history.replaceState(null, "", "#" + tabId);
+        }
+      }
+
+      try {
+        if ("scrollRestoration" in history) {
+          history.scrollRestoration = "manual";
+        }
+      } catch (_err) {
+        /* ignore */
+      }
+
+      window.addEventListener("hashchange", () => onRouteChange(false));
+      /** Bump `_c0_zt` immediately on zoom/window metrics change (debounced handler is too late for fast tab clicks). */
+      function syncC0EmbedZoomRevisionNow() {
+        initC0PageZoomBaselines();
+        refreshC0EmbedZoomRevision();
+      }
+      window.addEventListener("resize", syncC0EmbedZoomRevisionNow);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", syncC0EmbedZoomRevisionNow);
+      }
+      window.addEventListener("resize", debouncedWindowOrViewportResize);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", debouncedWindowOrViewportResize);
+      }
+      refreshC0EmbedZoomRevision();
+      requestAnimationFrame(() => {
+        initC0PageZoomBaselines();
+        if (!window.__c0PageZoomBaselines) {
+          const iw = Math.max(1, window.innerWidth || 1);
+          window.__c0PageZoomBaselines = {
+            dpr: window.devicePixelRatio || 1,
+            oi: (window.outerWidth || iw) / iw,
+            vviw: 1,
+          };
+        }
+        refreshC0EmbedZoomRevision();
+        onRouteChange(true);
+      });
+    </script>
+  </body>
+</html>
