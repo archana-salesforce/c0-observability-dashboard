@@ -1,0 +1,2457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentforce Flywheel Explorer</title>
+  <!--
+    Deploy bundle — same folder as this file:
+    • flywheel_agent_explorer_data.js (required, especially for file://)
+    • flywheel_agent_explorer_data.json (optional; used when fetch() is allowed)
+    • tableau.gslides.svg (banner mark)
+    • D3 + ECharts from jsDelivr below (network required unless you vendor scripts locally)
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <style>
+    :root {
+      --page: #f3f3f3;
+      --panel: #ffffff;
+      --panel-2: #ffffff;
+      --card: #ffffff;
+      --ink: #16122c;
+      --muted: #706b85;
+      --teal: #12c3b5;
+      --blue: #7c96ff;
+      --purple: #8f72ff;
+      --red: #f25a8c;
+      --line: rgba(0, 0, 0, 0.08);
+      --shadow: 0 6px 18px rgba(42, 56, 95, 0.1);
+      --radius-xl: 12px;
+      --radius-lg: 10px;
+      --radius-md: 8px;
+      /** Match c0-observability overlay controls (deep-dive CTA focus). */
+      --focus-ring: 0 0 0 2px rgba(0, 161, 224, 0.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+    .page {
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 0 0 22px;
+    }
+    .mcp-banner {
+      margin: 6px 0 12px;
+      padding: 12px 18px;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(118deg, #1a0d4a 0%, #302783 38%, #3d56c4 72%, #1b6b9e 100%);
+      box-shadow: var(--shadow);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .mcp-banner-brand {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+    .mcp-banner-logo {
+      display: block;
+      height: 28px;
+      width: auto;
+    }
+    .mcp-banner-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 12px 16px;
+      min-width: 0;
+    }
+    .mcp-banner-text {
+      margin: 0;
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 17.5px;
+      font-weight: 400;
+      line-height: 1.36;
+      letter-spacing: -0.035em;
+      word-spacing: 0;
+      color: rgba(255, 255, 255, 0.94);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mcp-banner-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 10px 22px 11px;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      color: var(--ink);
+      background: #fff;
+      text-decoration: none;
+      border: 1.5px solid rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+      transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+    }
+    .mcp-banner-cta:hover {
+      background: #3d2b7a;
+      color: #fff;
+      border-color: #2a1f56;
+      box-shadow: 0 4px 20px rgba(61, 43, 122, 0.55);
+      transform: translateY(-1px);
+    }
+    .mcp-banner-cta:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
+    }
+    .agent-select-shell {
+      position: relative;
+      flex: 0 1 280px;
+      min-width: 0;
+      max-width: 100%;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, #ffffff 0%, #f6f5fa 100%);
+      border: 1px solid rgba(22, 18, 44, 0.12);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.9) inset,
+        0 1px 2px rgba(22, 18, 44, 0.05),
+        0 4px 14px rgba(42, 56, 95, 0.06);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .agent-select-shell:hover {
+      border-color: rgba(22, 18, 44, 0.18);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 2px 6px rgba(22, 18, 44, 0.07),
+        0 8px 20px rgba(42, 56, 95, 0.07);
+    }
+    .agent-select-shell:focus-within {
+      border-color: rgba(18, 195, 181, 0.45);
+      box-shadow:
+        0 0 0 3px rgba(18, 195, 181, 0.16),
+        0 4px 18px rgba(42, 56, 95, 0.08);
+    }
+    select.agent-select--readout {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 12px 42px 12px 16px;
+      border: none;
+      border-radius: var(--radius-lg);
+      background-color: transparent;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25L7 8.75l3.5-3.5' stroke='%235b556d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 14px 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: -0.015em;
+      line-height: 1.35;
+      color: #16122c;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      box-shadow: none;
+    }
+    select.agent-select--readout:hover {
+      color: #111;
+    }
+    select.agent-select--readout:focus {
+      outline: none;
+    }
+    select.agent-select--readout option {
+      font-weight: 500;
+      padding: 8px;
+    }
+    /** Collapsed label is fixed copy; native select sits on top (near-transparent) for picking. */
+    .agent-select-shell--caption {
+      min-height: 48px;
+    }
+    .agent-select-collapsed-caption {
+      display: block;
+      pointer-events: none;
+      padding: 12px 42px 12px 16px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: -0.015em;
+      line-height: 1.35;
+      color: #5b556d;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25L7 8.75l3.5-3.5' stroke='%235b556d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 14px 14px;
+    }
+    .agent-select-shell--caption:hover .agent-select-collapsed-caption {
+      color: #16122c;
+    }
+    select.agent-select--readout-overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: inherit;
+      background: transparent;
+      background-image: none;
+      opacity: 0.02;
+      cursor: pointer;
+      z-index: 2;
+      font-size: 16px;
+      line-height: 1;
+      color: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+      box-shadow: none;
+    }
+    select.agent-select--readout-overlay:focus {
+      outline: none;
+    }
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: #111;
+      user-select: none;
+    }
+    .toggle input { accent-color: var(--teal); width: 18px; height: 18px; }
+    .grid-top {
+      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+    @media (min-width: 1021px) {
+      /** Fixed row height: readout + map stay the same size regardless of narrative length. */
+      .grid-top {
+        height: 715px;
+        min-height: 715px;
+        max-height: 715px;
+        align-items: stretch;
+      }
+      .grid-top > .panel.panel--readout,
+      .grid-top > .panel.panel--map {
+        height: 100%;
+        max-height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .grid-top > .panel--readout .readout-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .grid-top > .panel--readout .readout-stack,
+      .grid-top > .panel--readout .readout-coords {
+        flex-shrink: 0;
+      }
+      .grid-top > .panel--readout .narrative-grid {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+    @media (max-width: 1020px) {
+      .grid-top {
+        grid-template-columns: 1fr;
+      }
+      .grid-top > .panel {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .grid-top > .panel.panel--readout {
+        height: 555px;
+        min-height: 555px;
+        max-height: 555px;
+        overflow: hidden;
+      }
+      .grid-top > .panel--readout .readout-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+        height: 100%;
+      }
+      .grid-top > .panel--readout .readout-stack,
+      .grid-top > .panel--readout .readout-coords {
+        flex-shrink: 0;
+      }
+      .grid-top > .panel--readout .narrative-grid {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .grid-top > .panel.panel--map {
+        height: 515px;
+        min-height: 515px;
+        max-height: 515px;
+        overflow: hidden;
+      }
+      .grid-top > .panel--map .map-scatter-stack {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto;
+      }
+    }
+    .grid-top .panel {
+      margin-bottom: 0;
+    }
+    .panel {
+      background: #ffffff;
+      border-radius: var(--radius-xl);
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .panel-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px 18px;
+      margin-bottom: 10px;
+    }
+    .panel-title {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.12;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #111;
+    }
+    .panel-hint {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.35;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: var(--muted);
+    }
+    /** Map scatter: outer stack grows in the panel flex layout; HUD overlays without shifting chart height. */
+    .map-scatter-stack {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 260px;
+      min-width: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .map-scatter-stack #quadrantChart {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    #quadrantChart {
+      width: 100%;
+      position: relative;
+      min-width: 0;
+    }
+    #quadrantChart svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      vertical-align: top;
+    }
+    .quadrant-tip {
+      position: fixed;
+      z-index: 100;
+      max-width: 280px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      color: #111;
+      font-size: 13px;
+      line-height: 1.45;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.06s ease;
+      white-space: normal;
+    }
+    .quadrant-tip strong {
+      font-weight: 700;
+    }
+    .grid-top > .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    /** Map column: chart grows to fill column height beside readout. */
+    .grid-top > .panel--map {
+      min-height: 0;
+    }
+    .grid-top > .panel--map .panel-head {
+      flex-shrink: 0;
+    }
+    /** Inset stack so chart + HUD align with map title text. */
+    .grid-top > .panel--map .map-scatter-stack {
+      padding-left: 14px;
+    }
+    /** Extra-soft outer bloom on the animated path (keeps trail readable, not loud). */
+    .grid-top > .panel--map .scatter-trail-wrap {
+      filter: drop-shadow(0 0 5px rgba(1, 118, 211, 0.14)) drop-shadow(0 0 12px rgba(1, 118, 211, 0.06));
+    }
+    .map-panel-head {
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px 16px;
+    }
+    .map-panel-head-text {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    /** Play control + run-date HUD stack (HUD sits directly under the button). */
+    .map-panel-actions {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      margin-top: 2px;
+      max-width: min(100%, 420px);
+    }
+    /**
+     * Light pill control (original explorer style) with aurora border — same hue sweep as `.mcp-banner`
+     * (118deg purple → blue → teal) via double-layer background + transparent border.
+     */
+    .trend-play-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-sizing: border-box;
+      width: fit-content;
+      min-width: 0;
+      white-space: nowrap;
+      padding: 9px 16px 10px;
+      border-radius: 999px;
+      border: 2px solid transparent;
+      color: #16122c;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      cursor: pointer;
+      background:
+        linear-gradient(180deg, #ffffff 0%, #f6f5fa 100%) padding-box,
+        linear-gradient(118deg, #5a49ba 0%, #3d56c4 42%, #2a7bb8 72%, #1b6b9e 100%) border-box;
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+      box-shadow: 0 1px 4px rgba(48, 39, 131, 0.12);
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+    }
+    .trend-play-btn:hover:not(:disabled) {
+      background:
+        linear-gradient(180deg, #ffffff 0%, #f0eef8 100%) padding-box,
+        linear-gradient(118deg, #6554d4 0%, #4568d4 42%, #2a8fc4 72%, #1594b0 100%) border-box;
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+      box-shadow:
+        0 0 0 3px rgba(61, 86, 196, 0.14),
+        0 2px 12px rgba(27, 107, 158, 0.18);
+    }
+    .trend-play-btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+    .trend-play-btn:disabled {
+      opacity: 0.75;
+      cursor: default;
+      transform: none;
+    }
+    .trend-play-btn:focus-visible {
+      outline: 2px solid rgba(18, 195, 181, 0.55);
+      outline-offset: 3px;
+    }
+    .trend-play-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      font-size: 11px;
+      line-height: 1;
+      opacity: 0.9;
+      flex-shrink: 0;
+    }
+    .trend-pause-bars {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 12px;
+    }
+    .trend-pause-bar {
+      width: 3px;
+      height: 11px;
+      border-radius: 1px;
+      background: currentColor;
+    }
+    .scatter-anim-hud-wrap {
+      display: none;
+      width: 100%;
+      justify-content: flex-end;
+      align-items: stretch;
+      pointer-events: none;
+      margin: 0;
+      padding: 0;
+    }
+    .scatter-anim-hud-wrap.is-visible {
+      display: flex;
+    }
+    .scatter-anim-hud-inner {
+      display: inline-flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 0 8px;
+      max-width: 100%;
+      padding: 7px 14px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(1, 118, 211, 0.35);
+      box-shadow: 0 1px 4px rgba(42, 56, 95, 0.06);
+      font-size: 13px;
+      line-height: 1.35;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+    .scatter-anim-hud-name {
+      font-weight: 600;
+      color: #5b556d;
+    }
+    .scatter-anim-hud-sep {
+      font-weight: 500;
+      color: #b9b3c8;
+    }
+    .scatter-anim-hud-date {
+      font-weight: 700;
+      color: #1a0d4a;
+    }
+    @media (min-width: 1021px) {
+      .grid-top > .panel--map .map-scatter-stack {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+    }
+    .readout-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      min-width: 0;
+    }
+    .readout-select-row {
+      width: 100%;
+      min-width: 0;
+    }
+    .readout-select-row .agent-select-shell {
+      flex: 1 1 auto;
+      width: 100%;
+      max-width: 100%;
+    }
+    .readout-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 14px;
+      min-width: 0;
+    }
+    /** Readout content sits directly in the panel — no inner card chrome. */
+    .readout-body {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+    .readout-name {
+      margin: 0;
+      min-width: 0;
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: #111;
+      overflow-wrap: anywhere;
+    }
+    .readout-meta {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: var(--muted);
+      line-height: 1.4;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .readout-coords {
+      margin: 14px 0 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+      align-items: stretch;
+    }
+    @media (max-width: 480px) {
+      .readout-coords {
+        grid-template-columns: 1fr;
+      }
+    }
+    .readout-coord {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 10px 12px;
+      border-radius: var(--radius-xl);
+      background: #ffffff;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      min-width: 0;
+      cursor: help;
+    }
+    .readout-coord-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .readout-coord-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #5b556d;
+      line-height: 1.35;
+    }
+    .readout-coord-val {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .readout-coord.is-warn {
+      border-color: rgba(242, 90, 140, 0.25);
+      background: #fdf8fa;
+    }
+    .readout-archetype-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .readout-archetype-badge.hero { background: rgba(18,195,181,0.1); color: #2a7d74; border: 1px solid rgba(18,195,181,0.22); }
+    .readout-archetype-badge.habitual { background: rgba(175, 190, 215, 0.14); color: #5a667c; border: 1px solid rgba(150, 168, 198, 0.28); }
+    .readout-archetype-badge.binge { background: rgba(175, 190, 215, 0.14); color: #5a667c; border: 1px solid rgba(150, 168, 198, 0.28); }
+    .readout-archetype-badge.slow { background: rgba(242,90,140,0.08); color: #9a3d5c; border: 1px solid rgba(242,90,140,0.2); }
+    .readout-archetype-badge.unknown { background: #f3f2f7; color: #5c556f; border: 1px solid var(--line); }
+    .readout-archetype-badge-inline {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+    }
+    .narrative-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .narrative-card {
+      border-radius: var(--radius-xl);
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      box-shadow: 0 1px 5px rgba(42, 56, 95, 0.04);
+    }
+    .narrative-card h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: none;
+      letter-spacing: -0.01em;
+      color: #101010;
+    }
+    .narrative-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #151515;
+      font-size: 15px;
+      line-height: 1.45;
+      letter-spacing: -0.01em;
+    }
+    .narrative-card li { margin-bottom: 4px; }
+    .narrative-card.empty ul { color: var(--muted); font-style: italic; }
+    .narrative-card--strengths {
+      background: linear-gradient(165deg, #f0f7fd 0%, #e8f2fb 48%, #ffffff 100%);
+      border: 1px solid rgba(1, 118, 211, 0.22);
+      border-left-width: 4px;
+      border-left-color: rgba(1, 118, 211, 0.7);
+      box-shadow:
+        0 2px 14px rgba(1, 118, 211, 0.1),
+        0 1px 5px rgba(42, 56, 95, 0.04);
+    }
+    .narrative-card--strengths h3 {
+      color: #0b5cab;
+    }
+    .narrative-card--strengths.empty h3 {
+      color: #1565ad;
+    }
+    .narrative-card--attention {
+      background: linear-gradient(165deg, #fdf5f8 0%, #faf6f8 45%, #ffffff 100%);
+      border: 1px solid rgba(242, 90, 140, 0.28);
+      border-left-width: 4px;
+      border-left-color: rgba(230, 72, 118, 0.72);
+      box-shadow:
+        0 2px 14px rgba(242, 90, 140, 0.1),
+        0 1px 5px rgba(42, 56, 95, 0.04);
+    }
+    .narrative-card--attention h3 {
+      color: #8c3558;
+    }
+    .narrative-card--attention.empty h3 {
+      color: #7a4a5e;
+    }
+    /** Flywheel metrics strip below readout + map (padding rhythm matches email impact-shell) */
+    .panel--flywheel-strip {
+      margin-top: 0;
+      padding: 28px 26px 32px;
+    }
+    .flywheel-strip-inner {
+      min-width: 0;
+    }
+    .flywheel-strip-header {
+      margin-bottom: 12px;
+    }
+    .flywheel-strip-title {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.12;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #111;
+    }
+    .flywheel-strip-sub {
+      margin: 8px 0 0;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: var(--muted);
+      line-height: 1.35;
+      max-width: 44rem;
+    }
+    .flywheel-stage-row {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      width: 100%;
+      min-height: 260px;
+    }
+    @media (min-width: 1101px) {
+      .flywheel-stage-row {
+        min-height: 360px;
+      }
+      .flywheel-stage {
+        min-height: 320px;
+      }
+    }
+    @media (max-width: 1100px) {
+      .flywheel-stage-row {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .flywheel-stage {
+        flex: 1 1 calc(50% - 8px) !important;
+        min-width: min(100%, 260px);
+      }
+    }
+    @media (max-width: 620px) {
+      .flywheel-stage {
+        flex: 1 1 100% !important;
+      }
+    }
+    .flywheel-stage {
+      flex: 1 1 0;
+      min-width: 0;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      padding: 14px 14px 16px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .flywheel-stage-head {
+      padding-bottom: 8px;
+      margin-bottom: 2px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .flywheel-stage-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: none;
+      letter-spacing: -0.02em;
+      color: #101010;
+    }
+    /** Stage narrative: directly under the KPI stack / sparklines in the column. */
+    .flywheel-stage-tagline {
+      margin: 0;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      font-size: 14.5px;
+      line-height: 1.48;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+    .flywheel-stage-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+    .metric-card {
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      background: #ffffff;
+      box-shadow: 0 1px 5px rgba(42, 56, 95, 0.04);
+      display: grid;
+      gap: 8px;
+    }
+    .metric-card--compact {
+      padding: 8px 10px 9px;
+      gap: 5px;
+      border-radius: var(--radius-lg);
+    }
+    .metric-card--compact .metric-name {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.25;
+      color: #111;
+      letter-spacing: -0.01em;
+    }
+    .metric-card--compact .metric-value {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: #111;
+      white-space: normal;
+      text-align: right;
+      max-width: 100%;
+    }
+    .panel--flywheel-strip .spark {
+      height: 64px;
+    }
+    .metric-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .metric-value-col {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+      min-width: 0;
+      max-width: 52%;
+    }
+    .metric-card--compact .metric-value-col {
+      max-width: 54%;
+    }
+    .metric-trend-wrap {
+      line-height: 1.15;
+    }
+    .metric-trend {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .metric-trend-glyph {
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .metric-trend--up {
+      color: #0b6b3a;
+    }
+    .metric-trend--down {
+      color: #9a2d4a;
+    }
+    .metric-trend--flat {
+      color: #706b85;
+      font-weight: 600;
+    }
+    .metric-name {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: #101010;
+      line-height: 1.2;
+    }
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #111;
+      white-space: nowrap;
+    }
+    .metric-def-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .metric-def-row .metric-def {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .metric-def {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+      letter-spacing: 0.003em;
+    }
+    .metric-def-info {
+      flex-shrink: 0;
+      margin: 1px 0 0;
+      width: 20px;
+      height: 20px;
+      border: none;
+      border-radius: 50%;
+      padding: 0;
+      background: rgba(112, 107, 133, 0.12);
+      color: #5b556d;
+      cursor: help;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      font-style: italic;
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .metric-def-info:hover {
+      background: rgba(112, 107, 133, 0.22);
+      color: #39343f;
+    }
+    .metric-def-info:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+    .spark {
+      height: 48px;
+      width: 100%;
+    }
+    .load-error {
+      padding: 24px 28px;
+      border-radius: var(--radius-xl);
+      background: #fff5f5;
+      border: 1px solid #f5c2c2;
+      box-shadow: var(--shadow);
+      color: #842029;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .kbd {
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+      background: #f4f2f8;
+      padding: 2px 7px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="mcp-banner" role="banner">
+      <div class="mcp-banner-row">
+        <div class="mcp-banner-brand">
+          <img
+            class="mcp-banner-logo"
+            src="./tableau.gslides.svg"
+            width="142"
+            height="28"
+            alt="Customer Zero — Agentforce Measurement"
+          />
+        </div>
+        <p class="mcp-banner-text">
+          Developed with Tableau MCP — Helping Agents see and understand data. Delivering the speed, flexibility, and clarity modern analytics need.
+        </p>
+        <a
+          class="mcp-banner-cta"
+          href="https://tableau.github.io/tableau-mcp/docs/intro"
+          target="_blank"
+          rel="noopener noreferrer"
+        >Learn more</a>
+      </div>
+    </header>
+
+    <div id="appMount"></div>
+  </div>
+
+  <!-- Loads on file:// and http(s): browsers block fetch() to local JSON under file://; this script assigns the payload. -->
+  <script src="./flywheel_agent_explorer_data.js"></script>
+  <script>
+    const DATA_URL = "./flywheel_agent_explorer_data.json";
+    const THRESH = { retention: 10, engagement: 30 };
+
+    /** No double quotes — safe inside HTML tooltip style attributes */
+    const CHART_FONT_FAMILY =
+      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif";
+    const METRIC_DEFS = {
+      weeklyAcq:
+        "Weekly acquisition rate: (new users in 7d ÷ WAU) × 100. - Share of weekly active users who are first-time users.",
+      newUserRet7:
+        "7-day new user retention: first activity on D-8, returned D-7…D-1. - Onboarding quality signal; compares early return within the first week window.",
+      ret28:
+        "28-day retention: users active in the earlier 28-day window who returned in the current 28-day window. - Rolling cohort view of sustained return across month-scale windows.",
+      intensity:
+        "7-day action call intensity: action calls in window ÷ WAU. - Depth of usage per active user; higher means more calls per weekly active.",
+      depthPct:
+        "7-day engagement depth %: average-user action calls ÷ power-user action calls × 100. - Higher values mean engagement is spread beyond a small power-user fringe.",
+      flywheelMapY:
+        "7-Day Retention (WoW) % - prior-week active users who returned this week, as a share of prior-week actives × 100. Higher = stronger week-over-week return.",
+      habitPct:
+        "Stickiness %: Week-1 users who stayed active all four subsequent weeks (methodology §5). - Same series as the spark below.",
+    };
+
+    /** Split visible KPI blurb vs extended copy (delimiter: space-hyphen-space; avoids breaking e.g. Week-1). */
+    function splitMetricDefLine(def) {
+      const s = String(def || "");
+      const i = s.indexOf(" - ");
+      if (i < 0) return { lead: s.trim(), rest: "" };
+      return { lead: s.slice(0, i).trim(), rest: s.slice(i + 3).trim() };
+    }
+
+    let payload = null;
+    /** Latest archetype-map draw args (D3 SVG, redrawn on sync + resize). */
+    let quadrantCtx = {
+      agent: null,
+      agents: [],
+      showPeers: true,
+      selectedOverride: null,
+      trailPoints: null,
+      animRunDateLabel: null,
+    };
+    let scatterAnimGen = 0;
+    let scatterAnimRunning = false;
+    let scatterAnimPaused = false;
+    const scatterPauseWaiters = [];
+    let sparkInstances = [];
+
+    function flushScatterPauseWaiters() {
+      const list = scatterPauseWaiters.splice(0, scatterPauseWaiters.length);
+      for (const fn of list) {
+        try {
+          fn();
+        } catch (_e) {}
+      }
+    }
+
+    function archetypeClass(name) {
+      const n = String(name || "").toLowerCase();
+      if (n.includes("org hero")) return "hero";
+      if (n.includes("habitual")) return "habitual";
+      if (n.includes("binge")) return "binge";
+      if (n.includes("slow")) return "slow";
+      return "unknown";
+    }
+
+    /** Selected scatter dot — matches readout badge / archetype hues. */
+    function archetypeScatterPalette(cls) {
+      switch (cls) {
+        case "hero":
+          return {
+            innerFill: "rgba(18, 195, 181, 0.68)",
+            innerStroke: "#0b8f86",
+            haloStroke: "#14beb1",
+            glow: "rgba(20, 190, 177, 0.48)",
+          };
+        case "habitual":
+          return {
+            innerFill: "rgba(175, 190, 215, 0.42)",
+            innerStroke: "#6a7a92",
+            haloStroke: "#b4c0d6",
+            glow: "rgba(175, 190, 215, 0.26)",
+          };
+        case "binge":
+          return {
+            innerFill: "rgba(175, 190, 215, 0.4)",
+            innerStroke: "#6a7a92",
+            haloStroke: "#b4c0d6",
+            glow: "rgba(175, 190, 215, 0.24)",
+          };
+        case "slow":
+          return {
+            innerFill: "rgba(242, 90, 140, 0.52)",
+            innerStroke: "#9a3d5c",
+            haloStroke: "#d193aa",
+            glow: "rgba(242, 90, 140, 0.36)",
+          };
+        default:
+          return {
+            innerFill: "rgba(175, 190, 215, 0.4)",
+            innerStroke: "#6a7a92",
+            haloStroke: "#b4c0d6",
+            glow: "rgba(175, 190, 215, 0.22)",
+          };
+      }
+    }
+
+    /** Archetype copy for UI: singular labels (payload may still use plural class names). */
+    function formatArchetypeLabel(name) {
+      const raw = String(name || "").trim();
+      if (!raw) return raw;
+      const norm = raw.toLowerCase().replace(/\s+/g, " ");
+      const map = {
+        "slow converters": "Slow Converter",
+        "binge-and-bounce": "Binge-and-Bounce",
+        "habitual performers": "Habitual Performer",
+        "org heroes": "Org Hero",
+      };
+      return map[norm] || raw;
+    }
+
+    function escapeAttr(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/\r?\n/g, " ");
+    }
+
+    function fmtPct(v, digits) {
+      if (v == null || Number.isNaN(v)) return "—";
+      const d = digits == null ? 1 : digits;
+      return `${Number(v).toFixed(d)}%`;
+    }
+
+    function fmtNum(v, digits) {
+      if (v == null || Number.isNaN(v)) return "—";
+      const d = digits == null ? 2 : digits;
+      if (Math.abs(v) >= 1000) return Number(v).toLocaleString(undefined, { maximumFractionDigits: d });
+      return Number(v).toFixed(d);
+    }
+
+    function parseBullets(text) {
+      const raw = String(text || "").trim();
+      if (!raw) return [];
+      return raw
+        .split(/\n\s*\n/)
+        .map((b) => b.replace(/^\d+\.\s*/gm, "").replace(/\n+/g, " ").trim())
+        .filter(Boolean);
+    }
+
+    /** Parallel run-date (YYYY-MM-DD) + numeric series for sparklines */
+    function alignedSeriesPairs(agent, key) {
+      const t = agent.series?.t || [];
+      const arr = agent.series?.[key];
+      if (!arr || !t.length) return [];
+      const n = Math.min(t.length, arr.length);
+      const pairs = [];
+      for (let i = 0; i < n; i++) {
+        const v = arr[i];
+        if (v == null || Number.isNaN(Number(v))) continue;
+        pairs.push({ d: String(t[i]).slice(0, 10), v: Number(v) });
+      }
+      return pairs;
+    }
+
+    const METRIC_TILE_KEYS = ["weeklyAcq", "newUserRet7", "ret28", "intensity", "depthPct", "habitPct"];
+
+    /** Latest series point with run date ≤ runIso (ISO); works when `alignedSeriesPairs` order is not sorted. */
+    function metricSeriesValueAtOrBefore(agent, metricKey, runIso) {
+      const pairs = alignedSeriesPairs(agent, metricKey);
+      if (!pairs.length || !runIso) return null;
+      const r = String(runIso).slice(0, 10);
+      let bestD = "";
+      let bestV = null;
+      for (const p of pairs) {
+        const d = String(p.d).slice(0, 10);
+        if (d <= r && d >= bestD) {
+          bestD = d;
+          bestV = p.v;
+        }
+      }
+      return bestV;
+    }
+
+    function formatMetricTileLiveValue(metricKey, v) {
+      if (v == null || !Number.isFinite(Number(v))) return "—";
+      if (metricKey === "intensity") return `${fmtNum(v, 2)} / user`;
+      return fmtPct(v, 1);
+    }
+
+    /** Map animation: show series values for `runIso`; pass null to restore `agent.metrics` headline numbers. */
+    function updateLiveMetricTileValues(agent, runIso) {
+      if (!agent || !agent.metrics) return;
+      const m = agent.metrics;
+      const r = runIso && String(runIso).slice(0, 10);
+      for (const k of METRIC_TILE_KEYS) {
+        const el = document.getElementById(`metricVal_${k}`);
+        if (!el) continue;
+        const raw = r ? metricSeriesValueAtOrBefore(agent, k, r) : m[k];
+        el.textContent = formatMetricTileLiveValue(k, raw);
+      }
+    }
+
+    /**
+     * Weekly map coordinates from series (depth % = X, retention % = Y), oldest → newest.
+     * Matches static scatter when the latest week equals agent.scatter.
+     */
+    function scatterHistoryTrajectory(agent) {
+      const t = agent.series?.t || [];
+      const xs = agent.series?.depthPct;
+      const ys = agent.series?.flywheel7;
+      if (!xs || !ys || !t.length) return [];
+      const n = Math.min(t.length, xs.length, ys.length);
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        const px = Number(xs[i]);
+        const py = Number(ys[i]);
+        if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+        out.push({ d: String(t[i]).slice(0, 10), x: px, y: py });
+      }
+      out.sort((a, b) => a.d.localeCompare(b.d));
+      return out;
+    }
+
+    /** Polyline vertices: completed weeks + current interpolated position (map X/Y). */
+    function buildScatterTrailPoints(traj, segIdx, u) {
+      if (!traj || traj.length < 2 || segIdx < 0 || segIdx >= traj.length - 1) return [];
+      const out = [];
+      for (let k = 0; k <= segIdx; k++) out.push({ x: traj[k].x, y: traj[k].y });
+      const A = traj[segIdx];
+      const B = traj[segIdx + 1];
+      out.push({ x: A.x + (B.x - A.x) * u, y: A.y + (B.y - A.y) * u });
+      return out;
+    }
+
+    /** Which run-date label to show for smooth HUD while scrubbing weeks. */
+    function animRunDateForFrame(traj, segIdx, u) {
+      const n = traj.length;
+      if (n < 1) return "";
+      if (n < 2) return traj[0].d;
+      const denom = n - 1;
+      const p = Math.min(1, Math.max(0, (segIdx + u) / denom));
+      const idx = Math.round(p * (n - 1));
+      return traj[idx].d;
+    }
+
+    /** Last point vs prior point in aligned series (week-over-week style). */
+    function recentWeekTrend(agent, metricKey) {
+      const pairs = alignedSeriesPairs(agent, metricKey);
+      if (pairs.length < 2) return { dir: "unknown", title: "", html: "" };
+      const last = pairs[pairs.length - 1].v;
+      const prev = pairs[pairs.length - 2].v;
+      if (!Number.isFinite(last) || !Number.isFinite(prev)) return { dir: "unknown", title: "", html: "" };
+      const tol = 1e-7 * (1 + Math.abs(prev));
+      if (Math.abs(last - prev) <= tol) {
+        return {
+          dir: "flat",
+          title: "Flat vs prior week in series",
+          html: '<span class="metric-trend metric-trend--flat" title="Flat vs prior week in series"><span class="metric-trend-glyph">→</span> Flat</span>',
+        };
+      }
+      if (last > prev) {
+        return {
+          dir: "up",
+          title: "Up vs prior week in series",
+          html: '<span class="metric-trend metric-trend--up" title="Up vs prior week in series"><span class="metric-trend-glyph">↑</span> Up</span>',
+        };
+      }
+      return {
+        dir: "down",
+        title: "Down vs prior week in series",
+        html: '<span class="metric-trend metric-trend--down" title="Down vs prior week in series"><span class="metric-trend-glyph">↓</span> Down</span>',
+      };
+    }
+
+    const SPARK_VALUE_FORMAT = {
+      weeklyAcq: "pct",
+      newUserRet7: "pct",
+      ret28: "pct",
+      intensity: "num",
+      depthPct: "pct",
+      habitPct: "pct",
+    };
+
+    function formatRunDateLabel(iso) {
+      const s = String(iso || "").slice(0, 10);
+      const p = s.split("-");
+      if (p.length !== 3) return s;
+      const y = Number(p[0]);
+      const m = Number(p[1]);
+      const day = Number(p[2]);
+      if (!y || !m || !day) return s;
+      return new Date(y, m - 1, day).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+
+    /** Readout line: Run Date: M-D-YYYY (no leading zeros). */
+    function formatRunDateReadout(iso) {
+      const s = String(iso || "").slice(0, 10);
+      const p = s.split("-");
+      if (p.length !== 3) return `Run Date: ${s}`;
+      const y = Number(p[0]);
+      const m = Number(p[1]);
+      const day = Number(p[2]);
+      if (!y || !m || !day) return `Run Date: ${s}`;
+      return `Run Date: ${m}-${day}-${y}`;
+    }
+
+    function fmtSparkTooltipValue(metricKey, v) {
+      return SPARK_VALUE_FORMAT[metricKey] === "pct" ? fmtPct(v, 1) : fmtNum(v, 2);
+    }
+
+    function sparkChartDispose(ent) {
+      const ch = ent && ent.chart ? ent.chart : ent;
+      try {
+        ch.dispose();
+      } catch (_e) {}
+    }
+
+    function disposeSparks() {
+      sparkInstances.forEach(sparkChartDispose);
+      sparkInstances = [];
+    }
+
+    /** Last spark category index with date ≤ runIso (YYYY-MM-DD string compare). */
+    function lastCategoryIndexAtOrBefore(categories, runIso) {
+      const r = String(runIso || "").slice(0, 10);
+      if (!r || !categories || !categories.length) return -1;
+      let last = -1;
+      for (let i = 0; i < categories.length; i++) {
+        const c = String(categories[i]).slice(0, 10);
+        if (c <= r) last = i;
+      }
+      return last;
+    }
+
+    /**
+     * While map trend animation runs: reveal sparkline through run dates ≤ iso (area + line grow).
+     * End of visible segment uses a dot. Pass null to restore full series (idle).
+     */
+    function updateSparkAnimReveal(isoDateOrNull) {
+      const iso = isoDateOrNull && String(isoDateOrNull).slice(0, 10);
+      for (const ent of sparkInstances) {
+        const ch = ent.chart;
+        const yFull = ent.yData;
+        if (!ch || !yFull || !ent.categories) continue;
+        try {
+          if (!iso) {
+            ch.setOption({
+              series: [
+                {
+                  data: yFull,
+                  smooth: 0.22,
+                  symbol: "none",
+                  showSymbol: false,
+                  lineStyle: { width: 2, color: ent.lineColor },
+                  areaStyle: { color: ent.areaGradient },
+                  markLine: { show: false, data: [] },
+                  emphasis: { disabled: true },
+                  animation: true,
+                  animationDurationUpdate: 240,
+                  animationEasingUpdate: "cubicOut",
+                },
+              ],
+            });
+            continue;
+          }
+          const lastIx = lastCategoryIndexAtOrBefore(ent.categories, iso);
+          const lineColor = ent.lineColor;
+          const progressive = yFull.map((v, i) => {
+            if (lastIx < 0 || i > lastIx) return null;
+            const n = Number(v);
+            if (!Number.isFinite(n)) return null;
+            if (i === lastIx) {
+              return {
+                value: n,
+                itemStyle: { color: "#ffffff", borderColor: lineColor, borderWidth: 2 },
+              };
+            }
+            return n;
+          });
+          ch.setOption({
+            series: [
+              {
+                data: progressive,
+                smooth: 0.22,
+                symbol: "circle",
+                showSymbol: true,
+                symbolSize: (val, params) =>
+                  params && params.dataIndex === lastIx && lastIx >= 0 ? 6 : 0,
+                lineStyle: { width: 2, color: lineColor },
+                areaStyle: { color: ent.areaGradient },
+                markLine: { show: false, data: [] },
+                emphasis: { disabled: true },
+                animation: true,
+                animationDurationUpdate: 280,
+                animationEasingUpdate: "cubicOut",
+              },
+            ],
+          });
+        } catch (_e) {}
+      }
+    }
+
+    function sparkLine(el, pairs, metricKey) {
+      if (!el) return;
+      const card = el.closest(".metric-card");
+      if (!pairs.length) {
+        if (card) card.style.opacity = "0.55";
+        return;
+      }
+      if (card) card.style.opacity = "1";
+
+      /** Salesforce brand blue (spark series + fill) */
+      const pal = {
+        line: "rgba(1, 118, 211, 0.92)",
+        areaTop: "rgba(1, 118, 211, 0.2)",
+        areaBottom: "rgba(1, 118, 211, 0.03)",
+      };
+
+      const xData = pairs.map((p) => p.d);
+      const yData = pairs.map((p) => p.v);
+      const areaGradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        { offset: 0, color: pal.areaTop },
+        { offset: 1, color: pal.areaBottom },
+      ]);
+
+      const sparkH = Math.max(36, Math.round(el.clientHeight || 0) || 44);
+      const ch = echarts.init(el, null, { renderer: "canvas", width: "auto", height: sparkH });
+      sparkInstances.push({
+        chart: ch,
+        categories: xData,
+        yData,
+        lineColor: pal.line,
+        areaGradient,
+      });
+      const gridLine = "rgba(22, 18, 44, 0.07)";
+      ch.setOption({
+        textStyle: { fontFamily: CHART_FONT_FAMILY },
+        animationDuration: 200,
+        grid: { left: 4, right: 4, top: 4, bottom: 4 },
+        tooltip: {
+          show: true,
+          trigger: "axis",
+          confine: true,
+          axisPointer: {
+            type: "line",
+            lineStyle: { color: "rgba(22,18,44,0.22)", width: 1 },
+            z: 10,
+          },
+          formatter(params) {
+            const p0 = params[0];
+            const i = p0.dataIndex;
+            const row = pairs[i];
+            if (!row) return "";
+            const label = formatRunDateLabel(row.d);
+            const val = fmtSparkTooltipValue(metricKey, row.v);
+            return (
+              `<div style="font-family:${CHART_FONT_FAMILY};font-weight:700;font-size:13px;color:#111">${escapeHtml(label)}` +
+              ` <span style="font-weight:500;color:#7a738f">(${escapeHtml(row.d)})</span></div>` +
+              `<div style="margin-top:6px;font-size:15px;color:#151515">${escapeHtml(val)}</div>`
+            );
+          },
+        },
+        xAxis: {
+          type: "category",
+          data: xData,
+          boundaryGap: false,
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          splitLine: { show: false },
+        },
+        yAxis: {
+          type: "value",
+          scale: true,
+          splitNumber: 4,
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          splitLine: {
+            show: true,
+            lineStyle: { color: gridLine, width: 1, type: "dashed", dashOffset: 2 },
+          },
+        },
+        series: [
+          {
+            type: "line",
+            data: yData,
+            smooth: 0.22,
+            symbol: "none",
+            lineStyle: { width: 2, color: pal.line },
+            markLine: { show: false, data: [] },
+            areaStyle: {
+              color: areaGradient,
+            },
+          },
+        ],
+      });
+    }
+
+    function quadrantTipEnsure() {
+      let el = document.getElementById("quadrantTip");
+      if (!el) {
+        el = document.createElement("div");
+        el.id = "quadrantTip";
+        el.className = "quadrant-tip";
+        el.setAttribute("role", "tooltip");
+        document.body.appendChild(el);
+      }
+      return el;
+    }
+
+    function hideQuadrantTip() {
+      const el = document.getElementById("quadrantTip");
+      if (el) el.style.opacity = "0";
+    }
+
+    function showQuadrantTip(html, clientX, clientY) {
+      const el = quadrantTipEnsure();
+      el.innerHTML = html;
+      el.style.opacity = "1";
+      const pad = 14;
+      const rect = el.getBoundingClientRect();
+      let left = clientX + pad;
+      let top = clientY + pad;
+      if (left + rect.width > window.innerWidth - 10) left = window.innerWidth - rect.width - 10;
+      if (top + rect.height > window.innerHeight - 10) top = window.innerHeight - rect.height - 10;
+      el.style.left = `${Math.max(8, left)}px`;
+      el.style.top = `${Math.max(8, top)}px`;
+    }
+
+    function archetypeScatterTooltipSelected(agent, eg, rtSel) {
+      return (
+        `<div style="font-weight:700;font-size:15px;margin-bottom:4px;color:#111">${escapeHtml(agent.agentName)}</div>` +
+        `<div style="color:#7a738f;font-size:13px;line-height:1.35">${escapeHtml(agent.orgName)}</div>` +
+        `<div style="margin-top:8px;line-height:1.45;font-size:14px;color:#151515"><strong>${fmtPct(eg, 1)}</strong> engagement depth<br/><strong>${fmtPct(rtSel, 1)}</strong> 7-Day Retention (WoW) %</div>` +
+        `<div style="margin-top:6px;font-size:13px;font-weight:600;color:#5b556d">${escapeHtml(formatArchetypeLabel(agent.archetype))}</div>`
+      );
+    }
+
+    function archetypeScatterTooltipPeer(name, org, x, y, arch) {
+      return (
+        `<div style="font-weight:700;font-size:15px;margin-bottom:4px;color:#111">${escapeHtml(name)}</div>` +
+        `<div style="color:#7a738f;font-size:13px;line-height:1.35">${escapeHtml(org || "")}</div>` +
+        `<div style="margin-top:8px;line-height:1.45;font-size:14px;color:#151515"><strong>${fmtPct(x, 1)}</strong> depth · <strong>${fmtPct(y, 1)}</strong> 7-Day Retention (WoW) %</div>` +
+        `<div style="margin-top:6px;font-size:13px;font-weight:600;color:#5b556d">${escapeHtml(formatArchetypeLabel(arch || ""))}</div>`
+      );
+    }
+
+    /**
+     * Lightweight D3 SVG scatter (quadrants, thresholds, peers, selection).
+     * Avoids ECharts canvas work for this panel so pan/zoom/hover stays instant.
+     */
+    function renderQuadrantD3(host, agent, agents, showPeers, thresh, opts) {
+      if (typeof d3 === "undefined") {
+        host.innerHTML =
+          '<p class="panel-hint" style="padding:12px 0">Chart library failed to load. Connect to the network or allow the D3 CDN.</p>';
+        return;
+      }
+      hideQuadrantTip();
+      opts = opts || {};
+      const selOverride = opts.selectedOverride;
+      const trailPts = opts.trailPoints;
+      const animRunDateLabel = opts.animRunDateLabel;
+      const ex = thresh.engagement;
+      const rt = thresh.retention;
+      const egRaw = Number(agent.scatter.engagementPct);
+      const rtRaw = Number(agent.scatter.retentionPct);
+      let egPlot = Number.isFinite(egRaw) ? egRaw : 0;
+      let rtPlot = Number.isFinite(rtRaw) ? rtRaw : 0;
+      if (selOverride && Number.isFinite(selOverride.eg) && Number.isFinite(selOverride.rt)) {
+        egPlot = selOverride.eg;
+        rtPlot = selOverride.rt;
+      }
+
+      const box = host.getBoundingClientRect();
+      const wBox = Math.max(200, Math.floor(box.width || 320));
+      let height = Math.floor(box.height);
+      if (!Number.isFinite(height) || height < 220) {
+        height = Math.round(Math.min(560, Math.max(248, wBox * 0.66)));
+      }
+      const width = wBox;
+      /** Left margin for y-axis; larger value shifts plot + axes right (align with title). */
+      const ml = 86;
+      const mr = 20;
+      const mt = 28;
+      const mb = 80;
+      const iw = width - ml - mr;
+      const ih = height - mt - mb;
+
+      const x = d3.scaleLinear().domain([0, 100]).range([0, iw]);
+      const y = d3.scaleLinear().domain([0, 100]).range([ih, 0]);
+
+      function dataRect(x1, x2, y1, y2) {
+        const xa = Math.min(x1, x2);
+        const xb = Math.max(x1, x2);
+        const yLo = Math.min(y1, y2);
+        const yHi = Math.max(y1, y2);
+        return { x: x(xa), y: y(yHi), w: x(xb) - x(xa), h: y(yLo) - y(yHi) };
+      }
+
+      const fills = [
+        "rgba(242, 90, 140, 0.075)",
+        "rgba(185, 200, 222, 0.16)",
+        "rgba(185, 200, 222, 0.16)",
+        "rgba(20, 190, 177, 0.09)",
+      ];
+      const strokes = [
+        "rgba(242, 90, 140, 0.14)",
+        "rgba(160, 178, 208, 0.32)",
+        "rgba(160, 178, 208, 0.32)",
+        "rgba(20, 190, 177, 0.16)",
+      ];
+      const quadRects = [
+        dataRect(0, ex, 0, rt),
+        dataRect(ex, 100, 0, rt),
+        dataRect(0, ex, rt, 100),
+        dataRect(ex, 100, rt, 100),
+      ];
+
+      const quadCenters = [
+        { cx: ex * 0.78, cy: rt * 0.78, text: "Slow Converter", fill: "#9a3d5c" },
+        { cx: ex + (100 - ex) * 0.22, cy: rt * 0.78, text: "Binge-and-Bounce", fill: "#7d8ca5" },
+        { cx: ex * 0.22, cy: rt + (100 - rt) * 0.82, text: "Habitual Performer", fill: "#7d8ca5" },
+        { cx: ex + (100 - ex) * 0.82, cy: rt + (100 - rt) * 0.82, text: "Org Hero", fill: "#2a7d74" },
+      ];
+
+      host.textContent = "";
+      const svg = d3
+        .select(host)
+        .append("svg")
+        .attr("class", "archetype-scatter")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("width", width)
+        .attr("height", height)
+        .attr("focusable", "false");
+
+      svg.on("mouseleave", hideQuadrantTip);
+
+      const archCls = archetypeClass(agent.archetype);
+      const selPal = archetypeScatterPalette(archCls);
+      const glowId = `qglow-${(Math.random() * 1e9) | 0}`;
+      const glowF = svg
+        .append("defs")
+        .append("filter")
+        .attr("id", glowId)
+        .attr("x", "-40%")
+        .attr("y", "-40%")
+        .attr("width", "180%")
+        .attr("height", "180%");
+      glowF.append("feDropShadow").attr("dx", 0).attr("dy", 2).attr("stdDeviation", 3).attr("flood-color", selPal.glow);
+
+      const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+
+      const gridTicks = [20, 40, 60, 80];
+      g.selectAll("line.grid-v")
+        .data(gridTicks)
+        .join("line")
+        .attr("class", "grid-v")
+        .attr("x1", (d) => x(d))
+        .attr("x2", (d) => x(d))
+        .attr("y1", 0)
+        .attr("y2", ih)
+        .attr("stroke", "rgba(150, 165, 190, 0.14)")
+        .attr("stroke-width", 1);
+      g.selectAll("line.grid-h")
+        .data(gridTicks)
+        .join("line")
+        .attr("class", "grid-h")
+        .attr("x1", 0)
+        .attr("x2", iw)
+        .attr("y1", (d) => y(d))
+        .attr("y2", (d) => y(d))
+        .attr("stroke", "rgba(150, 165, 190, 0.14)")
+        .attr("stroke-width", 1);
+
+      g.selectAll("rect.quad")
+        .data(quadRects.map((r, i) => ({ ...r, fill: fills[i], stroke: strokes[i] })))
+        .join("rect")
+        .attr("class", "quad")
+        .attr("x", (d) => d.x)
+        .attr("y", (d) => d.y)
+        .attr("width", (d) => d.w)
+        .attr("height", (d) => d.h)
+        .attr("fill", (d) => d.fill)
+        .attr("stroke", (d) => d.stroke)
+        .attr("stroke-width", 1);
+
+      const threshStroke = "rgba(72, 72, 72, 0.38)";
+      g.append("line")
+        .attr("x1", x(ex))
+        .attr("x2", x(ex))
+        .attr("y1", 0)
+        .attr("y2", ih)
+        .attr("stroke", threshStroke)
+        .attr("stroke-width", 2);
+      g.append("line")
+        .attr("x1", 0)
+        .attr("x2", iw)
+        .attr("y1", y(rt))
+        .attr("y2", y(rt))
+        .attr("stroke", threshStroke)
+        .attr("stroke-width", 2);
+
+      g.append("text")
+        .attr("x", x(ex) + 5)
+        .attr("y", 14)
+        .attr("fill", "#6a6578")
+        .attr("font-size", 11)
+        .attr("font-weight", 600)
+        .style("font-family", CHART_FONT_FAMILY)
+        .text(`${ex}% Depth`);
+      g.append("text")
+        .attr("x", iw - 4)
+        .attr("y", y(rt) - 5)
+        .attr("text-anchor", "end")
+        .attr("fill", "#6a6578")
+        .attr("font-size", 11)
+        .attr("font-weight", 600)
+        .style("font-family", CHART_FONT_FAMILY)
+        .text(`${rt}% Retention`);
+
+      g.selectAll("text.quad-label")
+        .data(quadCenters)
+        .join("text")
+        .attr("class", "quad-label")
+        .attr("x", (d) => x(d.cx))
+        .attr("y", (d) => y(d.cy))
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("fill", (d) => d.fill)
+        .attr("font-size", 12)
+        .attr("font-weight", 600)
+        .style("font-family", CHART_FONT_FAMILY)
+        .text((d) => d.text);
+
+      const peerPts = [];
+      if (showPeers) {
+        for (const a of agents) {
+          if (a.id === agent.id) continue;
+          const px = Number(a.scatter.engagementPct);
+          const py = Number(a.scatter.retentionPct);
+          if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+          peerPts.push({ px, py, a });
+        }
+      }
+
+      g.selectAll("circle.peer")
+        .data(peerPts)
+        .join("circle")
+        .attr("class", "peer")
+        .attr("cx", (d) => x(d.px))
+        .attr("cy", (d) => y(d.py))
+        .attr("r", 3.25)
+        .attr("fill", "rgba(175, 190, 215, 0.22)")
+        .attr("stroke", "rgba(130, 148, 178, 0.42)")
+        .attr("stroke-width", 1)
+        .style("cursor", "default")
+        .on("mouseenter", (event, d) => {
+          showQuadrantTip(
+            archetypeScatterTooltipPeer(d.a.agentName, d.a.orgName, d.px, d.py, d.a.archetype),
+            event.clientX,
+            event.clientY
+          );
+        })
+        .on("mousemove", (event, d) => {
+          showQuadrantTip(
+            archetypeScatterTooltipPeer(d.a.agentName, d.a.orgName, d.px, d.py, d.a.archetype),
+            event.clientX,
+            event.clientY
+          );
+        })
+        .on("mouseleave", hideQuadrantTip);
+
+      if (trailPts && trailPts.length >= 2) {
+        const lineFn = d3
+          .line()
+          .x((d) => x(d.x))
+          .y((d) => y(d.y))
+          .curve(d3.curveLinear);
+        const dPath = lineFn(trailPts);
+        const trailG = g.append("g").attr("class", "scatter-trail-wrap").style("pointer-events", "none");
+        /** Wide soft underglow → mid bloom → solid core (reads as subtle luminous trail). */
+        trailG
+          .append("path")
+          .attr("class", "scatter-trail scatter-trail--glow")
+          .attr("d", dPath)
+          .attr("fill", "none")
+          .attr("stroke", "rgba(1, 118, 211, 0.14)")
+          .attr("stroke-width", 7)
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-linecap", "round");
+        trailG
+          .append("path")
+          .attr("class", "scatter-trail scatter-trail--halo")
+          .attr("d", dPath)
+          .attr("fill", "none")
+          .attr("stroke", "rgba(1, 118, 211, 0.32)")
+          .attr("stroke-width", 3.5)
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-linecap", "round");
+        trailG
+          .append("path")
+          .attr("class", "scatter-trail scatter-trail--core")
+          .attr("d", dPath)
+          .attr("fill", "none")
+          .attr("stroke", "rgba(1, 118, 211, 0.78)")
+          .attr("stroke-width", 1.85)
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-linecap", "round");
+      }
+
+      const sx = x(egPlot);
+      const sy = y(rtPlot);
+      /** ~33% smaller than original 22 / 15 px radii */
+      const selHaloR = 14.75;
+      const selInnerR = 10;
+      const selLabelDy = 18;
+      const selG = g.append("g").attr("class", "selected-agent");
+      if (animRunDateLabel) selG.style("opacity", 0.86);
+
+      selG
+        .append("circle")
+        .attr("cx", sx)
+        .attr("cy", sy)
+        .attr("r", selHaloR)
+        .attr("fill", "#ffffff")
+        .attr("stroke", selPal.haloStroke)
+        .attr("stroke-width", 1.75)
+        .attr("filter", `url(#${glowId})`);
+      selG
+        .append("circle")
+        .attr("cx", sx)
+        .attr("cy", sy)
+        .attr("r", selInnerR)
+        .attr("fill", selPal.innerFill)
+        .attr("stroke", selPal.innerStroke)
+        .attr("stroke-width", 2)
+        .style("cursor", "default")
+        .on("mouseenter", (event) => {
+          showQuadrantTip(archetypeScatterTooltipSelected(agent, egPlot, rtPlot), event.clientX, event.clientY);
+        })
+        .on("mousemove", (event) => {
+          showQuadrantTip(archetypeScatterTooltipSelected(agent, egPlot, rtPlot), event.clientX, event.clientY);
+        })
+        .on("mouseleave", hideQuadrantTip);
+
+      if (!animRunDateLabel) {
+        const labelText =
+          Number.isFinite(egPlot) && Number.isFinite(rtPlot) ? agent.agentName : `${agent.agentName} (no coords)`;
+        const shortLabel = labelText.length > 36 ? `${labelText.slice(0, 34)}…` : labelText;
+        selG
+          .append("text")
+          .attr("x", sx)
+          .attr("y", sy - selLabelDy)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#39343f")
+          .attr("font-size", 16)
+          .attr("font-weight", 500)
+          .style("font-family", CHART_FONT_FAMILY)
+          .text(shortLabel);
+      }
+
+      const xAxisG = svg.append("g").attr("transform", `translate(${ml},${mt + ih})`);
+      xAxisG
+        .call(
+          d3
+            .axisBottom(x)
+            .tickValues([0, 20, 40, 60, 80, 100])
+            .tickFormat((d) => `${d}%`)
+            .tickSizeOuter(0)
+            .tickPadding(12)
+        )
+        .call((s) => s.selectAll("path,line").attr("stroke", "#2f2a39").attr("stroke-width", 1.5))
+        .call((s) => s.selectAll("text").attr("fill", "#7e788c").attr("font-size", 12).style("font-family", CHART_FONT_FAMILY));
+
+      const yAxisG = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+      yAxisG
+        .call(
+          d3
+            .axisLeft(y)
+            .tickValues([0, 20, 40, 60, 80, 100])
+            .tickFormat((d) => `${d}%`)
+            .tickSizeOuter(0)
+            .tickPadding(10)
+        )
+        .call((s) => s.selectAll("path,line").attr("stroke", "#2f2a39").attr("stroke-width", 1.5))
+        .call((s) => s.selectAll("text").attr("fill", "#7e788c").attr("font-size", 12).style("font-family", CHART_FONT_FAMILY));
+
+      svg
+        .append("text")
+        .attr("x", ml + iw / 2)
+        .attr("y", height - 10)
+        .attr("text-anchor", "middle")
+        .attr("fill", "#5b556d")
+        .attr("font-size", 16)
+        .attr("font-weight", 500)
+        .style("font-family", CHART_FONT_FAMILY)
+        .text("7-Day Engagement Depth %");
+
+      svg
+        .append("text")
+        .attr("x", 16)
+        .attr("y", mt + ih / 2)
+        .attr("text-anchor", "middle")
+        .attr("transform", `rotate(-90,16,${mt + ih / 2})`)
+        .attr("fill", "#5b556d")
+        .attr("font-size", 16)
+        .attr("font-weight", 500)
+        .style("font-family", CHART_FONT_FAMILY)
+        .text("7-Day Retention (WoW) %");
+    }
+
+    function metricCardHtml(defKey, sparkId, label, valueHtml, opts) {
+      const compact = opts && opts.compact;
+      const def = METRIC_DEFS[defKey] || "";
+      const { lead, rest } = splitMetricDefLine(def);
+      const defBlock = compact
+        ? ""
+        : `<div class="metric-def-row"><div class="metric-def">${escapeHtml(lead)}</div>${
+            rest
+              ? `<button type="button" class="metric-def-info" aria-label="${escapeAttr(`More detail: ${rest}`)}" title="${escapeAttr(rest)}"><span aria-hidden="true">i</span></button>`
+              : ""
+          }</div>`;
+      const titleAttr = compact && def ? ` title="${escapeAttr(def)}"` : "";
+      const cls = compact ? "metric-card metric-card--compact" : "metric-card";
+      const tr = opts && opts.trend;
+      const trendBlock =
+        tr && tr.dir !== "unknown" && tr.html ? `<div class="metric-trend-wrap">${tr.html}</div>` : "";
+      return `
+        <div class="${cls}"${titleAttr}>
+          <div class="metric-card-top">
+            <div class="metric-name">${label}</div>
+            <div class="metric-value-col">
+              <div class="metric-value" id="metricVal_${defKey}">${valueHtml}</div>
+              ${trendBlock}
+            </div>
+          </div>
+          ${defBlock}
+          <div class="spark" id="${sparkId}"></div>
+        </div>`;
+    }
+
+    function flywheelStageHtml(id, title, tagline, metricsHtml) {
+      return `<div class="flywheel-stage flywheel-stage--${id}">
+        <div class="flywheel-stage-head">
+          <h3 class="flywheel-stage-title">${title}</h3>
+        </div>
+        <div class="flywheel-stage-metrics">${metricsHtml}</div>
+        <p class="flywheel-stage-tagline">${escapeHtml(tagline)}</p>
+      </div>`;
+    }
+
+    function renderMetrics(agent) {
+      const m = agent.metrics;
+      const c = (trend) => ({ compact: true, trend });
+      const cards = [
+        metricCardHtml("weeklyAcq", "spark_weeklyAcq", "Weekly acquisition rate", fmtPct(m.weeklyAcq, 1), c(recentWeekTrend(agent, "weeklyAcq"))),
+        metricCardHtml("newUserRet7", "spark_newUserRet7", "7-day new user retention", fmtPct(m.newUserRet7, 1), c(recentWeekTrend(agent, "newUserRet7"))),
+        metricCardHtml("ret28", "spark_ret28", "28-day retention", fmtPct(m.ret28, 1), c(recentWeekTrend(agent, "ret28"))),
+        metricCardHtml("intensity", "spark_intensity", "7-day action call intensity", `${fmtNum(m.intensity, 2)} / user`, c(recentWeekTrend(agent, "intensity"))),
+        metricCardHtml("depthPct", "spark_depthPct", "7-day engagement depth %", fmtPct(m.depthPct, 1), c(recentWeekTrend(agent, "depthPct"))),
+        metricCardHtml("habitPct", "spark_habitPct", "Stickiness %", fmtPct(m.habitPct, 1), c(recentWeekTrend(agent, "habitPct"))),
+      ];
+      const tagGrowth =
+        "Expand the top of the funnel with steady weekly acquisition—clear first-run paths, lightweight onboarding, and org-visible momentum so new users show up, activate quickly, log an early win, and set the stage for retention instead of stalling in the POC phase.";
+      const tagRetention =
+        "Build a retention rhythm that pulls users back week after week—obvious re-entry points, proof right after the first success, and lightweight reminders that respect inbox load so return feels earned, the active base compounds, and acquisition is not wasted.";
+      const tagEngagement =
+        "Make each session feel richer and more consequential—clear prompts, faster resolve paths, and workflows that absorb real work so intensity climbs, depth spreads past the power-user fringe, and leaders see credible movement in the metrics they already track.";
+      const tagStickiness =
+        "Shape habits that feel automatic rather than forced—bite-sized daily wins, defaults that remove guesswork, and guardrails so Agentforce becomes the reflex your teams open before email, until the product sits in muscle memory instead of fading after launch energy.";
+      return `
+        <div class="flywheel-strip-inner">
+          <div class="flywheel-strip-header">
+            <h2 class="flywheel-strip-title">Flywheel Components</h2>
+            <p class="flywheel-strip-sub">Read left to right: each stage feeds the next. Sparks show recent weekly history; hover a metric card for the full definition.</p>
+          </div>
+          <div class="flywheel-stage-row">
+            ${flywheelStageHtml("growth", "Growth", tagGrowth, cards[0])}
+            ${flywheelStageHtml("retention", "Retention", tagRetention, cards.slice(1, 3).join(""))}
+            ${flywheelStageHtml("engagement", "Engagement", tagEngagement, cards.slice(3, 5).join(""))}
+            ${flywheelStageHtml("stickiness", "Stickiness", tagStickiness, cards[5])}
+          </div>
+        </div>`;
+    }
+
+    /** Nth dropdown option with this agent label (orgs A→Z, then agents A→Z within each org — matches optgroup build). */
+    function nthAgentIdInSelectOrder(agentsSorted, agentName, n) {
+      if (!agentsSorted.length || n < 1) return "";
+      const want = String(agentName).trim();
+      const orgsSorted = [...new Set(agentsSorted.map((a) => a.orgName))].sort();
+      let seen = 0;
+      for (const org of orgsSorted) {
+        for (const a of agentsSorted.filter((x) => x.orgName === org)) {
+          if (String(a.agentName).trim() === want) {
+            seen += 1;
+            if (seen === n) return a.id;
+          }
+        }
+      }
+      return "";
+    }
+
+    function renderApp() {
+      const allAgentsSorted = payload.agents.slice().sort((a, b) => {
+        const o = a.orgName.localeCompare(b.orgName);
+        if (o !== 0) return o;
+        return a.agentName.localeCompare(b.agentName);
+      });
+      const orgs = [...new Set(allAgentsSorted.map((a) => a.orgName))].sort();
+
+      const mount = document.getElementById("appMount");
+      mount.innerHTML = `
+        <div class="grid-top">
+          <section class="panel panel--readout">
+            <div id="readoutShell" class="readout-body">
+              <div class="readout-stack">
+                <h2 class="readout-name" id="readoutName"></h2>
+                <div class="readout-select-row">
+                  <div class="agent-select-shell agent-select-shell--caption">
+                    <span class="agent-select-collapsed-caption">Select an Agent</span>
+                    <select id="agentSelect" class="agent-select--readout agent-select--readout-overlay" aria-label="Choose agent"></select>
+                  </div>
+                </div>
+                <div class="readout-meta-row">
+                  <span id="archetypeBadgeWrap" class="readout-archetype-badge-inline"></span>
+                  <p class="readout-meta" id="readoutMeta"></p>
+                </div>
+              </div>
+              <div class="readout-coords" id="readoutCoords"></div>
+              <div class="narrative-grid" id="narrativeGrid"></div>
+            </div>
+          </section>
+          <section class="panel panel--map">
+            <div class="panel-head map-panel-head">
+              <div class="map-panel-head-text flywheel-strip-header">
+                <h2 class="flywheel-strip-title">Agent Archetype Map</h2>
+                <p class="flywheel-strip-sub">Engagement Depth vs 7-Day Retention (WoW) % · ${THRESH.engagement}% / ${THRESH.retention}% Thresholds</p>
+              </div>
+              <div class="map-panel-actions">
+                <button
+                  type="button"
+                  class="trend-play-btn"
+                  id="trendPlayBtn"
+                  aria-label="Play animated trend across weekly run dates for the selected agent"
+                >
+                  <span class="trend-play-icon" id="trendPlayIcon" aria-hidden="true">▶</span>
+                  <span class="trend-play-label">Play Animated Trend</span>
+                </button>
+                <div id="scatterAnimHudWrap" class="scatter-anim-hud-wrap" role="status" aria-live="polite"></div>
+              </div>
+            </div>
+            <div class="map-scatter-stack" id="mapScatterStack">
+              <div id="quadrantChart"></div>
+            </div>
+          </section>
+        </div>
+        <section class="panel panel--flywheel-strip">
+          <div id="metricsMount"></div>
+        </section>
+      `;
+
+      const sel = document.getElementById("agentSelect");
+      for (const org of orgs) {
+        const og = document.createElement("optgroup");
+        og.label = org;
+        for (const a of allAgentsSorted.filter((x) => x.orgName === org)) {
+          const opt = document.createElement("option");
+          opt.value = a.id;
+          opt.textContent = a.agentName;
+          og.appendChild(opt);
+        }
+        sel.appendChild(og);
+      }
+
+      const params = new URLSearchParams(location.search);
+      const wanted = params.get("id") || location.hash.replace(/^#/, "");
+      if (wanted && allAgentsSorted.some((a) => a.id === wanted)) sel.value = wanted;
+      else {
+        const secondSalesAgent = nthAgentIdInSelectOrder(allAgentsSorted, "Sales Agent", 2);
+        const pick =
+          secondSalesAgent && allAgentsSorted.some((a) => a.id === secondSalesAgent)
+            ? secondSalesAgent
+            : allAgentsSorted[0]?.id || "";
+        if (pick) sel.value = pick;
+      }
+
+      function setTrendPlayButtonIcon(running, paused) {
+        const iconEl = document.getElementById("trendPlayIcon");
+        if (!iconEl) return;
+        if (running && !paused) {
+          iconEl.textContent = "";
+          iconEl.innerHTML =
+            '<span class="trend-pause-bars"><span class="trend-pause-bar"></span><span class="trend-pause-bar"></span></span>';
+        } else {
+          iconEl.innerHTML = "";
+          iconEl.textContent = "▶";
+        }
+      }
+
+      function updateScatterAnimHudBar() {
+        const hudWrap = document.getElementById("scatterAnimHudWrap");
+        if (!hudWrap) return;
+        const ag = quadrantCtx.agent;
+        const label = ag && quadrantCtx.animRunDateLabel ? String(quadrantCtx.animRunDateLabel) : "";
+        if (!label) {
+          hudWrap.classList.remove("is-visible");
+          hudWrap.innerHTML = "";
+          return;
+        }
+        const rawName = String(ag.agentName || "");
+        const shortName = rawName.length > 34 ? `${rawName.slice(0, 32)}…` : rawName;
+        hudWrap.classList.add("is-visible");
+        hudWrap.innerHTML = `<div class="scatter-anim-hud-inner"><span class="scatter-anim-hud-name">${escapeHtml(shortName)}</span><span class="scatter-anim-hud-sep">·</span><span class="scatter-anim-hud-date">${escapeHtml(label)}</span></div>`;
+      }
+
+      function paintQuadrant() {
+        if (!quadrantCtx.agent) {
+          updateScatterAnimHudBar();
+          return;
+        }
+        const el = document.getElementById("quadrantChart");
+        if (!el) {
+          updateScatterAnimHudBar();
+          return;
+        }
+        renderQuadrantD3(el, quadrantCtx.agent, quadrantCtx.agents, quadrantCtx.showPeers, THRESH, {
+          selectedOverride: quadrantCtx.selectedOverride || null,
+          trailPoints: quadrantCtx.trailPoints || null,
+          animRunDateLabel: quadrantCtx.animRunDateLabel || null,
+        });
+        updateScatterAnimHudBar();
+      }
+
+      function sleepMs(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async function awaitUnpausedOrAbort(startGen) {
+        while (scatterAnimPaused && scatterAnimGen === startGen) {
+          await new Promise((resolve) => scatterPauseWaiters.push(resolve));
+        }
+      }
+
+      async function playScatterTrendAnimation() {
+        if (scatterAnimRunning) return;
+        const agent = quadrantCtx.agent;
+        if (!agent) return;
+        const traj = scatterHistoryTrajectory(agent);
+        if (traj.length < 2) return;
+        const startGen = scatterAnimGen;
+        scatterAnimRunning = true;
+        scatterAnimPaused = false;
+        flushScatterPauseWaiters();
+        const btn = document.getElementById("trendPlayBtn");
+        const labelEl = btn && btn.querySelector(".trend-play-label");
+        if (btn) {
+          btn.setAttribute("aria-busy", "true");
+          btn.title = "Pause animation";
+          if (labelEl) labelEl.textContent = "Pause";
+        }
+        setTrendPlayButtonIcon(true, false);
+        const MS_PER_SEGMENT = 580;
+        const SUBSTEPS = 14;
+        try {
+          for (let i = 0; i < traj.length - 1; i++) {
+            const A = traj[i];
+            const B = traj[i + 1];
+            for (let j = 0; j <= SUBSTEPS; j++) {
+              if (scatterAnimGen !== startGen) return;
+              await awaitUnpausedOrAbort(startGen);
+              if (scatterAnimGen !== startGen) return;
+              const u = j / SUBSTEPS;
+              const eg = A.x + (B.x - A.x) * u;
+              const rt = A.y + (B.y - A.y) * u;
+              quadrantCtx.showPeers = false;
+              quadrantCtx.selectedOverride = { eg, rt };
+              quadrantCtx.trailPoints = buildScatterTrailPoints(traj, i, u);
+              const runD = animRunDateForFrame(traj, i, u);
+              quadrantCtx.animRunDateLabel = formatRunDateReadout(runD);
+              paintQuadrant();
+              updateSparkAnimReveal(runD);
+              updateLiveMetricTileValues(agent, runD);
+              await sleepMs(MS_PER_SEGMENT / SUBSTEPS);
+              await awaitUnpausedOrAbort(startGen);
+            }
+          }
+          if (scatterAnimGen !== startGen) return;
+          await awaitUnpausedOrAbort(startGen);
+          if (scatterAnimGen !== startGen) return;
+          const L = traj[traj.length - 1];
+          quadrantCtx.showPeers = false;
+          quadrantCtx.selectedOverride = { eg: L.x, rt: L.y };
+          quadrantCtx.trailPoints = traj.map((p) => ({ x: p.x, y: p.y }));
+          quadrantCtx.animRunDateLabel = formatRunDateReadout(L.d);
+          paintQuadrant();
+          updateSparkAnimReveal(L.d);
+          updateLiveMetricTileValues(agent, L.d);
+          await sleepMs(240);
+          if (scatterAnimGen !== startGen) return;
+          quadrantCtx.showPeers = true;
+          quadrantCtx.selectedOverride = null;
+          quadrantCtx.trailPoints = null;
+          quadrantCtx.animRunDateLabel = null;
+          paintQuadrant();
+          updateSparkAnimReveal(null);
+          updateLiveMetricTileValues(agent, null);
+        } finally {
+          scatterAnimRunning = false;
+          scatterAnimPaused = false;
+          flushScatterPauseWaiters();
+          quadrantCtx.trailPoints = null;
+          quadrantCtx.animRunDateLabel = null;
+          updateSparkAnimReveal(null);
+          updateLiveMetricTileValues(quadrantCtx.agent, null);
+          if (btn) {
+            btn.removeAttribute("aria-busy");
+            if (labelEl) labelEl.textContent = "Play Animated Trend";
+            const ag = quadrantCtx.agent;
+            const tr2 = ag ? scatterHistoryTrajectory(ag) : [];
+            btn.disabled = tr2.length < 2;
+            btn.title =
+              tr2.length < 2
+                ? "Need at least two weekly points on the map series to play."
+                : "Play through each run date (oldest → newest). Pause or resume while playing; peers return when finished.";
+          }
+          setTrendPlayButtonIcon(false, false);
+        }
+      }
+
+      const chartHost = document.getElementById("mapScatterStack");
+      if (chartHost && typeof ResizeObserver !== "undefined" && !chartHost.dataset.roAttached) {
+        chartHost.dataset.roAttached = "1";
+        new ResizeObserver(() => {
+          paintQuadrant();
+        }).observe(chartHost);
+      }
+
+      function sync() {
+        scatterAnimGen++;
+        const id = sel.value;
+        const agent = payload.agents.find((a) => a.id === id);
+        if (!agent) return;
+        history.replaceState(null, "", `${location.pathname}?id=${encodeURIComponent(id)}`);
+        location.hash = id;
+
+        const cls = archetypeClass(agent.archetype);
+        const shell = document.getElementById("readoutShell");
+        shell.className = "readout-body";
+
+        document.getElementById("readoutName").textContent = agent.agentName;
+        const metaLine = formatRunDateReadout(agent.runDate);
+        const metaEl = document.getElementById("readoutMeta");
+        metaEl.textContent = metaLine;
+        metaEl.setAttribute("title", escapeAttr(metaLine));
+
+        const egR = Number(agent.scatter.engagementPct);
+        const rtR = Number(agent.scatter.retentionPct);
+        const egOk = Number.isFinite(egR);
+        const rtOk = Number.isFinite(rtR);
+        const depthWarn = egOk && egR < THRESH.engagement;
+        const flyWarn = rtOk && rtR < THRESH.retention;
+        const depthTip = `${splitMetricDefLine(METRIC_DEFS.depthPct).lead} Breadth vs power users on the map. Threshold (engagement depth): ≥ ${THRESH.engagement}%.`;
+        const flyTip = `${splitMetricDefLine(METRIC_DEFS.flywheelMapY).lead}: prior-week actives returning vs prior-week actives. Threshold: ≥ ${THRESH.retention}%.`;
+        document.getElementById("readoutCoords").innerHTML = `
+          <div class="readout-coord ${depthWarn ? "is-warn" : ""}" title="${escapeAttr(depthTip)}">
+            <div class="readout-coord-row">
+              <span class="readout-coord-label">Engagement Depth (Map X)</span>
+              <span class="readout-coord-val">${egOk ? fmtPct(egR, 1) : "—"}</span>
+            </div>
+          </div>
+          <div class="readout-coord ${flyWarn ? "is-warn" : ""}" title="${escapeAttr(flyTip)}">
+            <div class="readout-coord-row">
+              <span class="readout-coord-label">7-Day Retention (WoW) %</span>
+              <span class="readout-coord-val">${rtOk ? fmtPct(rtR, 1) : "—"}</span>
+            </div>
+          </div>`;
+
+        document.getElementById("archetypeBadgeWrap").innerHTML = `<span class="readout-archetype-badge ${cls}">${escapeHtml(formatArchetypeLabel(agent.archetype))}</span>`;
+
+        const strengths = parseBullets(agent.narrative.keyStrengths);
+        const attention = parseBullets(agent.narrative.attentionNeeded);
+        document.getElementById("narrativeGrid").innerHTML = `
+          <div class="narrative-card narrative-card--strengths ${strengths.length ? "" : "empty"}">
+            <h3>🚀 Key Strengths</h3>
+            <ul>${strengths.length ? strengths.map((t) => `<li>${formatNarrativeBulletHtml(t)}</li>`).join("") : "<li>No narrative captured for this agent.</li>"}</ul>
+          </div>
+          <div class="narrative-card narrative-card--attention ${attention.length ? "" : "empty"}">
+            <h3>❗ Attention Needed</h3>
+            <ul>${attention.length ? attention.map((t) => `<li>${formatNarrativeBulletHtml(t)}</li>`).join("") : "<li>No narrative captured for this agent.</li>"}</ul>
+          </div>
+        `;
+
+        document.getElementById("metricsMount").innerHTML = renderMetrics(agent);
+
+        quadrantCtx = {
+          agent,
+          agents: allAgentsSorted,
+          showPeers: true,
+          selectedOverride: null,
+          trailPoints: null,
+          animRunDateLabel: null,
+        };
+        const tBtn = document.getElementById("trendPlayBtn");
+        if (tBtn) {
+          const tr0 = scatterHistoryTrajectory(agent);
+          tBtn.disabled = tr0.length < 2;
+          tBtn.title =
+            tr0.length < 2
+              ? "Need at least two weekly points on the map series to play."
+              : "Play through each run date (oldest → newest). Pause or resume while playing; peers return when finished.";
+        }
+        requestAnimationFrame(paintQuadrant);
+
+        disposeSparks();
+        sparkLine(document.getElementById("spark_weeklyAcq"), alignedSeriesPairs(agent, "weeklyAcq"), "weeklyAcq");
+        sparkLine(document.getElementById("spark_newUserRet7"), alignedSeriesPairs(agent, "newUserRet7"), "newUserRet7");
+        sparkLine(document.getElementById("spark_ret28"), alignedSeriesPairs(agent, "ret28"), "ret28");
+        sparkLine(document.getElementById("spark_intensity"), alignedSeriesPairs(agent, "intensity"), "intensity");
+        sparkLine(document.getElementById("spark_depthPct"), alignedSeriesPairs(agent, "depthPct"), "depthPct");
+        sparkLine(document.getElementById("spark_habitPct"), alignedSeriesPairs(agent, "habitPct"), "habitPct");
+      }
+
+      sel.addEventListener("change", sync);
+      document.getElementById("trendPlayBtn").addEventListener("click", () => {
+        const btn = document.getElementById("trendPlayBtn");
+        const labelEl = btn && btn.querySelector(".trend-play-label");
+        if (scatterAnimRunning) {
+          if (scatterAnimPaused) {
+            scatterAnimPaused = false;
+            flushScatterPauseWaiters();
+            if (labelEl) labelEl.textContent = "Pause";
+            if (btn) btn.title = "Pause animation";
+            setTrendPlayButtonIcon(true, false);
+          } else {
+            scatterAnimPaused = true;
+            if (labelEl) labelEl.textContent = "Resume";
+            if (btn) btn.title = "Resume animation";
+            setTrendPlayButtonIcon(true, true);
+          }
+          return;
+        }
+        void playScatterTrendAnimation();
+      });
+      window.addEventListener("resize", () => {
+        paintQuadrant();
+        sparkInstances.forEach((ent) => (ent.chart || ent).resize());
+      });
+      sync();
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    /** Strengths / attention bullets: bold text before first ":"; bold digit runs (incl. %). */
+    function formatNarrativeBulletHtml(text) {
+      const raw = String(text || "");
+      const colonIdx = raw.indexOf(":");
+      let head = "";
+      let tail = raw;
+      if (colonIdx >= 0) {
+        const label = raw.slice(0, colonIdx).trim();
+        if (label) {
+          head = `<strong>${escapeHtml(label)}</strong>: `;
+          tail = raw.slice(colonIdx + 1);
+        }
+      }
+      const escapedTail = escapeHtml(tail);
+      const withBoldNums = escapedTail.replace(/\d+(?:,\d{3})*(?:\.\d+)?%?/g, (m) => `<strong>${m}</strong>`);
+      return head + withBoldNums;
+    }
+
+    async function init() {
+      const mount = document.getElementById("appMount");
+      try {
+        if (window.__FLYWHEEL_EXPLORER_PAYLOAD__) {
+          payload = window.__FLYWHEEL_EXPLORER_PAYLOAD__;
+        } else {
+          const res = await fetch(DATA_URL, { cache: "no-store" });
+          if (!res.ok) throw new Error(res.status + " " + res.statusText);
+          payload = await res.json();
+        }
+        THRESH.retention = payload.thresholds?.retentionPct ?? THRESH.retention;
+        THRESH.engagement = payload.thresholds?.engagementPct ?? THRESH.engagement;
+        renderApp();
+      } catch (err) {
+        mount.innerHTML = `<div class="load-error"><strong>Could not load flywheel data.</strong><br/><br/>
+          ${escapeHtml(String(err.message || err))}<br/><br/>
+          Keep <span class="kbd">flywheel_agent_explorer_data.js</span> in the same folder as this HTML (required when opening as a local file).
+          On a web server you can use either that file or <span class="kbd">${DATA_URL}</span>.
+          Regenerate both from Tableau when refreshing the snapshot.</div>`;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
