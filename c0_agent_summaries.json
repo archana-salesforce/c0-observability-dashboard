@@ -1,0 +1,243 @@
+{
+  "Account Success Employee Agent": {
+    "good": [
+      "The customer experience appears healthier this week, with positive response noticeably higher and reprompt pressure easing versus the prior run."
+    ],
+    "bad": [
+      "One-week repeat usage and weekly new-user share both appear softer than last week, suggesting the top-of-funnel and return behavior may be cooling together."
+    ],
+    "issueAttention": [
+      "Issues: the small share of sessions that hit a backend error appear linked to meaningfully more reprompts, so reducing those recurring failures could help the reprompt trend hold."
+    ]
+  },
+  "Agentforce Sales Development Rep Agent2 Score2": {
+    "good": [
+      "Conciseness and negative response rate both appear to hold at healthy levels week-over-week on this training-style footprint."
+    ],
+    "bad": [
+      "Relevancy looks a shade softer than last week while planner time edges up, which may be worth a quick qualitative spot-check as volume returns."
+    ],
+    "issueAttention": []
+  },
+  "Analytics Agent Org62": {
+    "good": [
+      "The week appears friendlier overall, with negative response rate notably lower, positive response higher, and planner time a touch quicker than the prior run."
+    ],
+    "bad": [
+      "Conciseness and action time both appear to move in an unfavorable direction week-over-week, which may be worth watching together before they show up in tone."
+    ],
+    "issueAttention": [
+      "Issues: sessions that hit a backend error appear to see meaningfully more reprompts than healthy ones, so easing those recurring failures could help protect the improving reprompt picture."
+    ]
+  },
+  "Badgeforce Agent": {
+    "good": [
+      "Negative response rate and reprompt pressure both appear meaningfully lower than last week, suggesting a cleaner experience for users this run."
+    ],
+    "bad": [
+      "Positive response may be a little cooler than last week even as efficacy improves, and regression hints that pushing relevancy further could also be linked to slower action time—worth balancing as quality lifts."
+    ],
+    "issueAttention": []
+  },
+  "Customer Support Voice Agent": {
+    "good": [
+      "Relevancy may look a touch stronger than last week and conciseness appears broadly steady on this narrow rubric slice."
+    ],
+    "bad": [
+      "Positive response appears softer than the prior week and regression suggests that pushing conciseness further could also be linked to more reprompts, so that tradeoff likely needs to be watched closely."
+    ],
+    "issueAttention": []
+  },
+  "Emp Data Agent": {
+    "good": [
+      "The experience appears notably cleaner this week, with negative response rate, reprompt pressure, and positive response all moving in a favorable direction versus the prior run."
+    ],
+    "bad": [
+      "Planner time appears meaningfully longer than last week, which may be worth a quick review of where thinking cost is creeping in."
+    ],
+    "issueAttention": []
+  },
+  "Employee Agent": {
+    "good": [
+      "Weekly new-user share and monthly active users both appear a touch higher than last week on the rubric aggregate, suggesting the top of the funnel is holding up."
+    ],
+    "bad": [
+      "One-week repeat usage looks softer than the prior week and action time appears meaningfully longer, signals that may deserve a joint review."
+    ],
+    "issueAttention": [
+      "Issues: sessions that hit a backend error appear to see more reprompts and more missing-info responses, so working through the top recurring error patterns could help lift the broader efficacy trend."
+    ]
+  },
+  "Extended Outreach - Agent 1": {
+    "good": [
+      "Negative response rate may look a touch cleaner again while relevancy appears broadly steady on this automation footprint."
+    ],
+    "bad": [
+      "Planner time appears noticeably longer than last week—worth a quick pass to separate thinking time from orchestration overhead."
+    ],
+    "issueAttention": []
+  },
+  "Extended Outreach - Agent 2": {
+    "good": [
+      "Action time appears a touch quicker than last week while positive response holds near ceiling on this outreach automation footprint."
+    ],
+    "bad": [
+      "Planner time looks meaningfully longer and conciseness eases slightly, which may be worth a quick review of where orchestration cost is creeping in."
+    ],
+    "issueAttention": [
+      "Issues: the small share of sessions hitting backend errors appear to run noticeably slower than healthy ones, so trimming those recurring failures could help latency stay predictable."
+    ]
+  },
+  "help.salesforce.com": {
+    "good": [
+      "The experience appears friendlier and a little faster this week, with negative response rate and planner time both edging down while positive response ticks up."
+    ],
+    "bad": [
+      "Relevancy appears a shade softer than last week, which may be worth a qualitative spot-check before it shows up in tone."
+    ],
+    "issueAttention": [
+      "Issues: sessions that hit a backend error appear to see a clearly worse experience—more negative response, more reprompts, and less positive response—so reducing those recurring failures could help sentiment continue to improve."
+    ]
+  },
+  "Internal Partner Agent": {
+    "good": [
+      "Negative response rate appears lower and relevancy a touch higher than last week, suggesting a cleaner experience on a very narrow base."
+    ],
+    "bad": [
+      "Conciseness looks meaningfully softer than the prior week, which may be worth a quick qualitative review before drawing broader conclusions."
+    ],
+    "issueAttention": []
+  },
+  "Manager Agent": {
+    "good": [
+      "Positive response appears a little higher and negative response rate a touch lower than last week, suggesting a friendlier tone on the rubric aggregate."
+    ],
+    "bad": [
+      "One-week repeat usage looks meaningfully lower than last week, which may be worth watching closely while other efficacy signals ease."
+    ],
+    "issueAttention": [
+      "Issues: sessions that hit a backend error appear to return far more missing-info responses than healthy ones, so closing out those recurring knowledge-retrieval failures could help the overall experience."
+    ]
+  },
+  "Multi Event Agent": {
+    "good": [
+      "Planner time appears quicker than last week while negative response rate and positive response both hold at healthy levels."
+    ],
+    "bad": [
+      "Reprompt rate appears to edge up slightly on extremely light volume, so the move is likely best read as directional rather than decisive."
+    ],
+    "issueAttention": [
+      "Issues: the small share of sessions that hit a backend error appear to return less positive response and more missing-info answers, so the recurring action failures seem worth prioritizing even on light volume."
+    ]
+  },
+  "Product Growth Agent": {
+    "good": [
+      "Reprompt pressure appears meaningfully lower than last week while engagement depth and habit both tick higher on the rubric slice."
+    ],
+    "bad": [
+      "One-week repeat usage appears notably softer than the prior week alongside lower monthly active users and weekly new-user share—signals that likely deserve a joint review."
+    ],
+    "issueAttention": []
+  },
+  "Product Led Growth Agent": {
+    "good": [
+      "Conciseness appears to hold at a healthy level and reprompt rate remains at zero on this narrow rubric slice."
+    ],
+    "bad": [
+      "Relevancy looks softer than last week and regression hints that pushing conciseness further could also be linked to slower planner time—worth balancing as quality improves."
+    ],
+    "issueAttention": []
+  },
+  "Sales Agent": {
+    "good": [
+      "Positive response appears meaningfully higher and one-week repeat usage a touch stronger than the prior run, suggesting a friendlier and stickier week overall."
+    ],
+    "bad": [
+      "Multi-week habit looks softer than last week and relevancy eases, and regression hints that improving teachability may also travel with lower negative response—so quality gains will likely need to be paired with an adoption story."
+    ],
+    "issueAttention": []
+  },
+  "Sales Coach": {
+    "good": [
+      "Positive response holds at ceiling with negative response rate still at zero, suggesting sentiment remains clean on the rubric slice."
+    ],
+    "bad": [
+      "Relevancy appears meaningfully softer than last week, which may be worth a qualitative spot-check before it shows up in tone."
+    ],
+    "issueAttention": []
+  },
+  "SDR": {
+    "good": [
+      "Conciseness and negative response rate both appear to hold steady on a very slim rubric footprint."
+    ],
+    "bad": [
+      "Relevancy looks a shade softer than last week, and traffic remains too light for meaningful portfolio comparisons."
+    ],
+    "issueAttention": []
+  },
+  "SDR Japan Scenario1": {
+    "good": [
+      "Positive response appears to hold at ceiling with negative response rate still at zero on this narrow training footprint."
+    ],
+    "bad": [
+      "Relevancy looks softer than last week on near-zero headline volume, so the move is likely best read as directional only."
+    ],
+    "issueAttention": []
+  },
+  "SDR Scenario 1": {
+    "good": [
+      "Relevancy appears a touch stronger than last week while conciseness and negative response rate both hold steady."
+    ],
+    "bad": [
+      "Scenario traffic remains essentially flat, so week-over-week reads should be validated with graders before drawing conclusions."
+    ],
+    "issueAttention": []
+  },
+  "SDR Scenario 3": {
+    "good": [
+      "Conciseness appears broadly steady and negative response rate remains at zero on this scenario footprint."
+    ],
+    "bad": [
+      "Relevancy appears softer than last week—worth a qualitative spot-check with scenario graders before reading more into the move."
+    ],
+    "issueAttention": []
+  },
+  "Services Scoping Agent": {
+    "good": [
+      "One-week repeat usage appears a touch higher and action time a shade quicker than last week on the rubric slice."
+    ],
+    "bad": [
+      "Engagement depth and weekly new-user share both appear meaningfully softer than the prior week, which may warrant a closer review of how typical users are engaging."
+    ],
+    "issueAttention": []
+  },
+  "V2MOM_Agent": {
+    "good": [
+      "Action time appears noticeably quicker and one-week repeat usage a touch stronger than last week on the rubric aggregate."
+    ],
+    "bad": [
+      "Negative response rate and reprompt pressure both appear meaningfully higher than the prior week, signals that likely belong in the same review."
+    ],
+    "issueAttention": []
+  },
+  "Wellbeing Agent": {
+    "good": [
+      "Reprompt pressure appears noticeably lighter than last week on the rubric slice."
+    ],
+    "bad": [
+      "Relevancy appears meaningfully softer than last week, and regression hints that lifting helpfulness or teachability may travel with lower reprompts—worth a calm review before acting."
+    ],
+    "issueAttention": []
+  },
+  "www.salesforce.com": {
+    "good": [
+      "Planner time appears a touch quicker than last week while negative response rate and positive response both hold steady."
+    ],
+    "bad": [
+      "Reprompt rate appears to nudge up while relevancy eases slightly, which may be worth watching before it shows up elsewhere."
+    ],
+    "issueAttention": [
+      "Issues: sessions that hit a backend error appear to return more negative response and substantially more reprompts than healthy ones, so reducing the top recurring action failures could help protect tone and reprompt trends."
+    ]
+  }
+}
