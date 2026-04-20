@@ -17,6 +17,7 @@
       OPTIONAL (nice-to-have; shell has embedded JSON fallbacks for #1–2):
       • ./flywheel_agent_explorer_data.json — used when fetch works (HTTP); not required if only the .js bundle is shipped.
       • ./c0_agent_summaries.json · ./c0_agent_summaries_hover.json — merge over bundled <script type="application/json"> snapshots on Agent Rubric when fetch succeeds.
+      • ./topic-diagnostics-overlay.png — optional static image over the Topic Diagnostics Tableau view (see `TOPIC_DIAGNOSTICS_STATIC_OVERLAY_*` in script).
 
       NETWORK (not files; hosting must allow):
       • Tableau Embedding API: https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js
@@ -1387,13 +1388,43 @@
         pointer-events: none;
       }
 
+      /**
+       * Topic Diagnostics “How to Use” banner: hide until agent dropdown finishes loading
+       * (same `fetchAgentNameParameterOptions` completion as the segment filter), not only `firstinteractive`.
+       */
+      .tableau-slot.topic-diagnostics-banner-deferred .topic-diagnostics-static-overlay {
+        opacity: 0 !important;
+        pointer-events: none;
+      }
+
       .metric-float-panel,
       .segment-float-panel,
       .chemistry-sig-float-panel,
       .deep-dive-btn,
       .agent-summary-rail,
-      .agent-insight-layout-tool {
+      .agent-insight-layout-tool,
+      .topic-diagnostics-static-overlay {
         transition: opacity 170ms ease;
+      }
+
+      /**
+       * Topic Diagnostics — “How to Use” banner; horizontal position is midpoint (agent vs right-aligned); box from script, `object-fit: contain` for hi-res PNG.
+       */
+      .topic-diagnostics-static-overlay {
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 6;
+        display: block;
+        width: auto;
+        height: auto;
+        max-width: none;
+        object-fit: contain;
+        object-position: center center;
+        pointer-events: none;
+        user-select: none;
+        border-radius: 8px;
+        box-shadow: 0 4px 18px rgba(42, 56, 95, 0.12);
       }
 
       .deep-dive-btn {
@@ -2063,7 +2094,11 @@
           deepDiveButtons: true,
         },
         overviewMetricChemistry: { segmentFilter: true, chemistrySignificance: true },
-        overviewTopicDiagnostics: { segmentFilter: true, chemistrySignificance: true },
+        overviewTopicDiagnostics: {
+          segmentFilter: true,
+          chemistrySignificance: true,
+          topicDiagnosticsStaticOverlay: true,
+        },
       };
 
       const localPageEmbeds = {
@@ -2458,6 +2493,8 @@
         return false;
       }
       const segmentPanelPosition = { x: 1, y: 20 };
+      /** Matches `.segment-float-panel` `min-width` / `max-width` — Topic Diagnostics “How to Use” banner sits to the right of this block. */
+      const SEGMENT_FLOAT_PANEL_WIDTH_PX = 375;
       /**
        * Agent Rubric — AI insight banner only (px, relative to the Tableau slot). Agent name panel stays on `segmentPanelPosition`.
        * Tune with on-page menu; paste into defaults when locked, then set `AGENT_INSIGHT_LAYOUT_TOOL_ENABLED` false if desired.
@@ -2716,6 +2753,76 @@
       };
       const TOPIC_DIAGNOSTICS_SIG_LAYOUT_STORAGE_KEY = "c0-observability-topic-diagnostics-sig-layout";
       const TOPIC_DIAGNOSTICS_SIG_LAYOUT_TOOL_ENABLED = false;
+
+      /**
+       * Topic Diagnostics — wide banner PNG; **horizontal** position is the midpoint between agent-anchored left and dashboard-right-aligned left. Top = top of the Tableau slot (flush under header/subnav).
+       * Ship `./topic-diagnostics-overlay.png` next to the shell. Width/height from intrinsic aspect minus **`heightShrinkPx`**; nominal width still derived from agent-column span for scale.
+       * Update intrinsic size if you replace the PNG with different pixel dimensions.
+       */
+      const TOPIC_DIAGNOSTICS_STATIC_OVERLAY_SRC = "./topic-diagnostics-overlay.png";
+      /** Pixel size of `topic-diagnostics-overlay.png` (used only for aspect / scale math, not display size). */
+      const TOPIC_DIAGNOSTICS_OVERLAY_INTRINSIC_PX = { w: 4744, h: 604 };
+      const TOPIC_DIAGNOSTICS_STATIC_OVERLAY_DEFAULTS = {
+        opacity: 1,
+        /** Y offset from the top of `[data-tableau-slot]` (0 = top of embed area below sticky header). */
+        topPx: 0,
+        /** Used only for scale math (nominal strip width); banner is positioned by its **right** edge. */
+        gapAfterSegmentPx: 12,
+        /** Inset from the right edge of the 1600px viz host (banner right aligns here; tableau below matches). */
+        rightInsetPx: 16,
+        /** Shrink displayed height vs natural height-at-width (`hNatural`) by this many CSS pixels. */
+        heightShrinkPx: 10,
+      };
+
+      function applyTopicDiagnosticsStaticOverlay(slot, embedKey) {
+        if (embedKey !== "overviewTopicDiagnostics" || !slot) return;
+        const cfg = customOverlaysByEmbedKey[embedKey];
+        if (!cfg || !cfg.topicDiagnosticsStaticOverlay) return;
+        if (!String(TOPIC_DIAGNOSTICS_STATIC_OVERLAY_SRC || "").trim()) return;
+        let img = slot.querySelector(".topic-diagnostics-static-overlay");
+        if (!img) {
+          img = document.createElement("img");
+          img.className = "topic-diagnostics-static-overlay";
+          img.alt = "How to use Topic Diagnostics";
+          img.draggable = false;
+          img.decoding = "async";
+          slot.appendChild(img);
+        }
+        const L = TOPIC_DIAGNOSTICS_STATIC_OVERLAY_DEFAULTS;
+        img.src = TOPIC_DIAGNOSTICS_STATIC_OVERLAY_SRC;
+        const gap = Number(L.gapAfterSegmentPx) || 12;
+        const rightInset = Number(L.rightInsetPx) || 16;
+        const shrink = Number(L.heightShrinkPx) || 0;
+        const slotW = FIXED_TABLEAU_EMBED_WIDTH_PX || 1600;
+        const anchorLeft = segmentPanelPosition.x + SEGMENT_FLOAT_PANEL_WIDTH_PX + gap;
+        const topPx = clamp(Number(L.topPx ?? 0), 0, 8000);
+        const w = clamp(slotW - anchorLeft - rightInset, 120, slotW);
+        const { w: iw, h: ih } = TOPIC_DIAGNOSTICS_OVERLAY_INTRINSIC_PX;
+        const hNatural = (w * ih) / iw;
+        const hBox = Math.max(24, hNatural - shrink);
+        // Match box aspect to PNG so `contain` fills the box; full `w` + shorter `h` alone
+        // letterboxed horizontally and the box-shadow outlined empty space on the right.
+        const wBox = shrink > 0 ? Math.min(w, (hBox * iw) / ih) : w;
+        const rightEdge = slotW - rightInset;
+        const leftAlignToAgent = anchorLeft;
+        const leftAlignToDashboard = rightEdge - wBox;
+        img.style.left = Math.max(0, (leftAlignToAgent + leftAlignToDashboard) / 2) + "px";
+        img.style.top = clamp(topPx, 0, 8000) + "px";
+        img.style.width = wBox + "px";
+        img.style.height = hBox + "px";
+        img.style.opacity = String(clamp(L.opacity, 0, 1));
+      }
+
+      /**
+       * Show the Topic Diagnostics static banner in sync with the agent `<select>` becoming usable —
+       * call immediately after `agentSelect.disabled = false` (before `applyAgentNameParameterToViz`),
+       * not in `fetch(...).finally` (which runs after the parameter await and lagged the banner).
+       */
+      function revealTopicDiagnosticsBannerWhenAgentReady(slot, embedKey) {
+        const cfg = customOverlaysByEmbedKey[embedKey];
+        if (!slot || !cfg?.topicDiagnosticsStaticOverlay || !cfg?.segmentFilter) return;
+        slot.classList.remove("topic-diagnostics-banner-deferred");
+      }
 
       function chemistrySigLayoutProfile(embedKey) {
         if (embedKey === "overviewTopicDiagnostics") {
@@ -3852,6 +3959,7 @@
         if (panel.dataset.hydrated === "true") {
           syncWebPropertyAgentOverlayVisibility(slot, key);
           void refreshAgentSummaryBanner(slot, key, agentSelect.value || selectedAgentNameValue);
+          revealTopicDiagnosticsBannerWhenAgentReady(slot, key);
           tickAgentInsightChrome();
           return;
         }
@@ -3876,6 +3984,7 @@
               status.textContent = 'No values found in worksheet "' + helperSheet + '". Using default only.';
               renderOptions([]);
               agentSelect.disabled = false;
+              revealTopicDiagnosticsBannerWhenAgentReady(slot, key);
               selectedAgentNameValue = AGENT_NAME_DEFAULT;
               await applyAgentNameParameterToViz(vizElement, selectedAgentNameValue);
               syncWebPropertyAgentOverlayVisibility(slot, key);
@@ -3885,6 +3994,7 @@
             status.textContent = "";
             renderOptions(values);
             agentSelect.disabled = false;
+            revealTopicDiagnosticsBannerWhenAgentReady(slot, key);
             await applyAgentNameParameterToViz(vizElement, selectedAgentNameValue);
             syncWebPropertyAgentOverlayVisibility(slot, key);
             void refreshAgentSummaryBanner(slot, key, selectedAgentNameValue);
@@ -3897,6 +4007,7 @@
             await applyAgentNameParameterToViz(vizElement, AGENT_NAME_DEFAULT);
             syncWebPropertyAgentOverlayVisibility(slot, key);
             void refreshAgentSummaryBanner(slot, key, selectedAgentNameValue);
+            revealTopicDiagnosticsBannerWhenAgentReady(slot, key);
           })
           .finally(() => {
             tickAgentInsightChrome();
@@ -4205,6 +4316,9 @@
           positionChemistrySigPanel(slot, key);
           renderChemistrySignificanceControl(slot, viz || null, key);
         }
+        if (overlays.topicDiagnosticsStaticOverlay) {
+          applyTopicDiagnosticsStaticOverlay(slot, key);
+        }
 
         if (key === "agentRubric") {
           syncWebPropertyAgentOverlayVisibility(slot, key);
@@ -4275,7 +4389,7 @@
             : [];
         const src = resolveTableauEmbedSrc(tableauEmbeds[key]);
         slot.innerHTML = "";
-        slot.classList.remove("overlays-pending");
+        slot.classList.remove("overlays-pending", "topic-diagnostics-banner-deferred");
         slot.style.position = "relative";
         const vizHeight = tableauHeights[key] || 2200;
         slot.style.minHeight = vizHeight + "px";
@@ -4410,10 +4524,16 @@
         slot.appendChild(viz);
         // Host overlays mount immediately; `overlays-pending` keeps them non-interactive until `firstinteractive`.
         slot.classList.add("overlays-pending");
+        if (overlays.topicDiagnosticsStaticOverlay && overlays.segmentFilter) {
+          slot.classList.add("topic-diagnostics-banner-deferred");
+        }
         if (overlays.metricPickers) renderFloatingMetricPicker(slot, key, viz);
         if (overlays.deepDiveButtons) renderDeepDiveButton(slot, key);
         if (overlays.segmentFilter) renderSegmentFilter(slot, key, null);
         if (overlays.chemistrySignificance) renderChemistrySignificanceControl(slot, null, key);
+        if (overlays.topicDiagnosticsStaticOverlay) {
+          applyTopicDiagnosticsStaticOverlay(slot, key);
+        }
         if (key === "agentRubric") {
           applyAgentRubricLayoutFromState(slot, key);
           renderAgentRubricLayoutTool(slot, key);
