@@ -79,6 +79,30 @@ Check that:
 - the local logos render
 - the Tableau embeds load for users who have access
 
+### Local testing note for IP allowlisting
+
+This app now includes an **app-level IP allowlist** in `app.py`.
+
+- On Heroku, the allowlist turns on automatically
+- Locally, it stays off by default so you do not lock yourself out during development
+
+You can override that behavior with:
+
+```powershell
+$env:IP_ALLOWLIST_ENABLED="false"
+python app.py
+```
+
+To test the allowlist locally with your own CIDR list:
+
+```powershell
+$env:IP_ALLOWLIST_ENABLED="true"
+$env:ALLOWED_CIDRS="127.0.0.1/32"
+python app.py
+```
+
+`ALLOWED_CIDRS` is a comma-separated list. If you do not set it, the app uses the bundled Salesforce corporate IP ranges by default.
+
 ## Step 4: Create a new GitHub repo for these files
 
 From the GitHub page in your screenshot:
@@ -210,6 +234,8 @@ https://<your-heroku-app>.herokuapp.com/#agent-rubric
 - Tableau access is still controlled by Tableau authentication and permissions
 - If Tableau embedding is restricted by domain, you may need to allowlist your Heroku app domain or custom domain in Tableau
 - Heroku is hosting the page shell only; Snowflake connectivity stays behind the Tableau layer
+- The new IP filtering is **app-layer filtering in Flask**, not a Heroku edge or load balancer allowlist
+- If Salesforce corp public IP ranges change, update `ALLOWED_CIDRS` or the default list in `app.py`
 
 ## Minimal deployment checklist
 
