@@ -738,12 +738,6 @@
       .agent-summary-rail__title-group {
         flex: 1;
         min-width: 0;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: calc(6px * var(--header-scale)) calc(12px * var(--header-scale));
       }
 
       .agent-summary-rail__heading {
@@ -753,21 +747,6 @@
         letter-spacing: 0.02em;
         color: rgba(39, 48, 78, 0.92);
         margin: 0;
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-
-      .agent-summary-rail__sub {
-        margin: 0;
-        margin-left: auto;
-        font-size: calc(14px * var(--header-scale));
-        line-height: 1.3;
-        letter-spacing: 0.02em;
-        color: rgba(64, 76, 108, 0.82);
-        font-weight: 400;
-        text-align: right;
-        flex: 0 1 auto;
-        max-width: min(58%, 30rem);
       }
 
       .agent-summary-rail__body {
@@ -1690,13 +1669,13 @@
 {
   "Account Success Employee Agent": {
     "good": [
-      "The customer experience appears healthier this week, with positive response noticeably higher and reprompt pressure easing versus the prior run."
+      "One-week repeat usage appears broadly steady at roughly 26% while monthly active users tick up, suggesting the core user base is holding even as quality signals soften."
     ],
     "bad": [
-      "One-week repeat usage and weekly new-user share both appear softer than last week, suggesting the top-of-funnel and return behavior may be cooling together."
+      "Negative response rate and positive response both move in an unfavorable direction versus last week, with positive response down by roughly 10 percentage points and relevancy easing noticeably."
     ],
     "issueAttention": [
-      "Issues: the small share of sessions that hit a backend error appear linked to meaningfully more reprompts, so reducing those recurring failures could help the reprompt trend hold."
+      "Issues: sessions that hit a backend error appear to return meaningfully more reprompts and missing-info responses than healthy ones, so working through those recurring failures could help the overall efficacy picture."
     ]
   },
   "Agentforce Sales Development Rep Agent2 Score2": {
@@ -1704,229 +1683,238 @@
       "Conciseness and negative response rate both appear to hold at healthy levels week-over-week on this training-style footprint."
     ],
     "bad": [
-      "Relevancy looks a shade softer than last week while planner time edges up, which may be worth a quick qualitative spot-check as volume returns."
+      "Positive response eases off ceiling and planner time lengthens meaningfully, and regression hints that pushing teachability further may also be linked to slower planner time\u2014worth balancing as quality climbs."
     ],
     "issueAttention": []
   },
   "Analytics Agent Org62": {
     "good": [
-      "The week appears friendlier overall, with negative response rate notably lower, positive response higher, and planner time a touch quicker than the prior run."
+      "Reprompt pressure appears meaningfully lighter than last week and positive response edges higher while negative response rate stays low."
     ],
     "bad": [
-      "Conciseness and action time both appear to move in an unfavorable direction week-over-week, which may be worth watching together before they show up in tone."
+      "Action time appears notably longer than the prior week and conciseness eases, which may be worth a closer look at where orchestration cost is creeping in."
     ],
     "issueAttention": [
-      "Issues: sessions that hit a backend error appear to see meaningfully more reprompts than healthy ones, so easing those recurring failures could help protect the improving reprompt picture."
+      "Issues: sessions that hit a backend error appear to run with lower answer relevancy than healthy ones, so trimming those recurring failures could help protect the improving sentiment picture."
     ]
   },
   "Badgeforce Agent": {
     "good": [
-      "Negative response rate and reprompt pressure both appear meaningfully lower than last week, suggesting a cleaner experience for users this run."
+      "Reprompt pressure appears broadly steady near 1% and monthly active users tick higher than last week on the rubric slice."
     ],
     "bad": [
-      "Positive response may be a little cooler than last week even as efficacy improves, and regression hints that pushing relevancy further could also be linked to slower action time—worth balancing as quality lifts."
+      "Negative response rate appears sharply higher than the prior week while positive response and engagement depth both ease, and regression hints that pushing relevancy further could also be linked to slower action time\u2014so quality moves likely need to be balanced."
     ],
     "issueAttention": []
   },
   "Customer Support Voice Agent": {
     "good": [
-      "Relevancy may look a touch stronger than last week and conciseness appears broadly steady on this narrow rubric slice."
+      "Negative response rate appears a touch lower than last week on this narrow voice rubric slice."
     ],
     "bad": [
-      "Positive response appears softer than the prior week and regression suggests that pushing conciseness further could also be linked to more reprompts, so that tradeoff likely needs to be watched closely."
+      "Answer relevancy appears meaningfully softer than the prior week and reprompt pressure edges up, and regression suggests that pushing conciseness further may also be linked to more reprompts\u2014a tradeoff likely worth watching."
     ],
     "issueAttention": []
   },
   "Emp Data Agent": {
     "good": [
-      "The experience appears notably cleaner this week, with negative response rate, reprompt pressure, and positive response all moving in a favorable direction versus the prior run."
+      "Weekly new-user share and engagement depth both appear stronger than last week, suggesting the top of the funnel is picking up on a narrow slice."
     ],
     "bad": [
-      "Planner time appears meaningfully longer than last week, which may be worth a quick review of where thinking cost is creeping in."
+      "Negative response rate appears higher and positive response softer than the prior week, which may be worth a qualitative spot-check before reading more into the move."
     ],
     "issueAttention": []
   },
   "Employee Agent": {
     "good": [
-      "Weekly new-user share and monthly active users both appear a touch higher than last week on the rubric aggregate, suggesting the top of the funnel is holding up."
+      "Negative response rate and reprompt pressure both appear to ease slightly while monthly active users and the habit metric hold up, suggesting the core experience is steady on the rubric aggregate."
     ],
     "bad": [
-      "One-week repeat usage looks softer than the prior week and action time appears meaningfully longer, signals that may deserve a joint review."
+      "Positive response appears noticeably softer than last week and action time lengthens meaningfully, signals that likely belong in the same review."
     ],
     "issueAttention": [
-      "Issues: sessions that hit a backend error appear to see more reprompts and more missing-info responses, so working through the top recurring error patterns could help lift the broader efficacy trend."
+      "Issues: sessions that hit a backend error appear to see more reprompts and lower answer relevancy than healthy ones, so working through the top recurring error patterns could help the broader efficacy trend."
     ]
   },
   "Extended Outreach - Agent 1": {
     "good": [
-      "Negative response rate may look a touch cleaner again while relevancy appears broadly steady on this automation footprint."
+      "Negative response rate holds at 0% and reprompt pressure remains at zero on this outreach automation footprint."
     ],
     "bad": [
-      "Planner time appears noticeably longer than last week—worth a quick pass to separate thinking time from orchestration overhead."
+      "Planner time appears meaningfully longer than last week and positive response eases off ceiling, which may be worth a quick pass to separate thinking time from orchestration overhead."
     ],
     "issueAttention": []
   },
   "Extended Outreach - Agent 2": {
     "good": [
-      "Action time appears a touch quicker than last week while positive response holds near ceiling on this outreach automation footprint."
+      "Reprompt rate stays at zero and negative response rate remains very low on this outreach automation footprint."
     ],
     "bad": [
-      "Planner time looks meaningfully longer and conciseness eases slightly, which may be worth a quick review of where orchestration cost is creeping in."
+      "Planner time and action time both lengthen meaningfully versus last week while positive response eases, and regression hints that lifting teachability or helpfulness may also travel with slower planner time."
     ],
     "issueAttention": [
-      "Issues: the small share of sessions hitting backend errors appear to run noticeably slower than healthy ones, so trimming those recurring failures could help latency stay predictable."
+      "Issues: the small share of sessions that hit backend errors appear to run much slower and far less positive than healthy ones, so trimming those recurring failures could help latency and tone stay predictable."
     ]
   },
   "help.salesforce.com": {
     "good": [
-      "The experience appears friendlier and a little faster this week, with negative response rate and planner time both edging down while positive response ticks up."
+      "Conciseness appears a touch stronger than last week and reprompt pressure remains broadly flat on a stable volume base."
     ],
     "bad": [
-      "Relevancy appears a shade softer than last week, which may be worth a qualitative spot-check before it shows up in tone."
+      "Answer relevancy eases noticeably and planner time lengthens meaningfully versus last week, signals that likely deserve a joint review before they show up more broadly in tone."
     ],
     "issueAttention": [
-      "Issues: sessions that hit a backend error appear to see a clearly worse experience—more negative response, more reprompts, and less positive response—so reducing those recurring failures could help sentiment continue to improve."
+      "Issues: sessions that hit a backend error appear to see a clearly worse experience\u2014less positive response, more reprompts, more missing-info answers, and slower latency\u2014so reducing those recurring failures could help quality trends recover."
     ]
   },
   "Internal Partner Agent": {
     "good": [
-      "Negative response rate appears lower and relevancy a touch higher than last week, suggesting a cleaner experience on a very narrow base."
+      "Reprompt pressure appears a touch lower than last week and monthly active users tick up slightly on a narrow rubric slice."
     ],
     "bad": [
-      "Conciseness looks meaningfully softer than the prior week, which may be worth a quick qualitative review before drawing broader conclusions."
+      "Positive response appears meaningfully softer than the prior week and answer relevancy eases, which may be worth a qualitative review before drawing broader conclusions."
     ],
     "issueAttention": []
   },
   "Manager Agent": {
     "good": [
-      "Positive response appears a little higher and negative response rate a touch lower than last week, suggesting a friendlier tone on the rubric aggregate."
+      "Negative response rate appears a touch lower and one-week repeat usage modestly stronger than last week, with conciseness also edging up on the rubric aggregate."
     ],
     "bad": [
-      "One-week repeat usage looks meaningfully lower than last week, which may be worth watching closely while other efficacy signals ease."
+      "Positive response appears meaningfully softer than the prior week and relevancy eases, and action time runs longer\u2014signals that likely belong in the same review."
     ],
     "issueAttention": [
-      "Issues: sessions that hit a backend error appear to return far more missing-info responses than healthy ones, so closing out those recurring knowledge-retrieval failures could help the overall experience."
+      "Issues: sessions that hit a backend error appear to run notably slower than healthy ones, so closing out those recurring failures could help keep latency and tone steady."
     ]
   },
   "Multi Event Agent": {
     "good": [
-      "Planner time appears quicker than last week while negative response rate and positive response both hold at healthy levels."
+      "Conciseness appears broadly steady and reprompt pressure remains very light on this event-driven footprint."
     ],
     "bad": [
-      "Reprompt rate appears to edge up slightly on extremely light volume, so the move is likely best read as directional rather than decisive."
+      "Negative response rate edges up and positive response softens versus last week while planner time lengthens, which may be worth a qualitative spot-check before drawing broader conclusions."
     ],
     "issueAttention": [
-      "Issues: the small share of sessions that hit a backend error appear to return less positive response and more missing-info answers, so the recurring action failures seem worth prioritizing even on light volume."
+      "Issues: sessions that hit a backend error appear to return meaningfully more negative response than healthy ones, so the recurring action failures seem worth prioritizing even on modest error volume."
     ]
   },
   "Product Growth Agent": {
     "good": [
-      "Reprompt pressure appears meaningfully lower than last week while engagement depth and habit both tick higher on the rubric slice."
+      "Reprompt rate improves to zero this week while positive response ticks up and weekly new-user share strengthens on the rubric slice."
     ],
     "bad": [
-      "One-week repeat usage appears notably softer than the prior week alongside lower monthly active users and weekly new-user share—signals that likely deserve a joint review."
+      "Engagement depth, the habit metric, and one-week repeat usage all appear meaningfully softer than the prior week, signals that likely deserve a joint review of how users are returning."
     ],
     "issueAttention": []
   },
   "Product Led Growth Agent": {
     "good": [
-      "Conciseness appears to hold at a healthy level and reprompt rate remains at zero on this narrow rubric slice."
+      "Positive response holds at 100% and reprompt rate remains at zero with negative response rate also easing to zero on this narrow rubric slice."
     ],
     "bad": [
-      "Relevancy looks softer than last week and regression hints that pushing conciseness further could also be linked to slower planner time—worth balancing as quality improves."
+      "Answer relevancy eases from near-perfect levels and action time lengthens modestly, and chemistry hints that decisiveness and helpfulness tend to move together\u2014worth a calm review as the slice is small."
     ],
     "issueAttention": []
   },
   "Sales Agent": {
     "good": [
-      "Positive response appears meaningfully higher and one-week repeat usage a touch stronger than the prior run, suggesting a friendlier and stickier week overall."
+      "Negative response rate and reprompt pressure both appear a touch lower than last week while weekly new-user share ticks up on the rubric aggregate."
     ],
     "bad": [
-      "Multi-week habit looks softer than last week and relevancy eases, and regression hints that improving teachability may also travel with lower negative response—so quality gains will likely need to be paired with an adoption story."
+      "One-week repeat usage and engagement depth both appear meaningfully softer than the prior week and relevancy eases, and regression hints that lifting teachability may also travel with lower negative response\u2014so quality gains likely need an adoption story."
     ],
     "issueAttention": []
   },
   "Sales Coach": {
     "good": [
-      "Positive response holds at ceiling with negative response rate still at zero, suggesting sentiment remains clean on the rubric slice."
+      "Weekly new-user share and monthly active users both appear meaningfully stronger than last week as the coach slice expands."
     ],
     "bad": [
-      "Relevancy appears meaningfully softer than last week, which may be worth a qualitative spot-check before it shows up in tone."
+      "Negative response rate and positive response both move in an unfavorable direction as volume grows, which may be worth a qualitative spot-check while the rubric footprint is still thin."
     ],
     "issueAttention": []
   },
   "SDR": {
     "good": [
-      "Conciseness and negative response rate both appear to hold steady on a very slim rubric footprint."
+      "Conciseness and negative response rate both appear to hold steady near their prior-week levels on this scenario footprint."
     ],
     "bad": [
-      "Relevancy looks a shade softer than last week, and traffic remains too light for meaningful portfolio comparisons."
+      "Positive response eases off ceiling and planner time lengthens meaningfully versus last week, which may be worth a qualitative review with scenario graders."
     ],
     "issueAttention": []
   },
   "SDR Japan Scenario1": {
     "good": [
-      "Positive response appears to hold at ceiling with negative response rate still at zero on this narrow training footprint."
+      "Negative response rate remains at zero and answer relevancy appears broadly steady on this training-style footprint."
     ],
     "bad": [
-      "Relevancy looks softer than last week on near-zero headline volume, so the move is likely best read as directional only."
+      "Planner time and action time both lengthen meaningfully versus last week as scenario volume expands, which likely warrants a closer look with scenario graders."
+    ],
+    "issueAttention": []
+  },
+  "SDR Japan Scenario2": {
+    "good": [
+      "Positive response holds at 100% and negative response rate remains at zero on an extremely thin rubric slice."
+    ],
+    "bad": [
+      "Scenario volume collapses to a handful of sessions while answer relevancy eases sharply, so any reads here are likely best treated as directional only."
     ],
     "issueAttention": []
   },
   "SDR Scenario 1": {
     "good": [
-      "Relevancy appears a touch stronger than last week while conciseness and negative response rate both hold steady."
+      "Conciseness appears broadly steady and negative response rate remains essentially at zero on this scenario footprint."
     ],
     "bad": [
-      "Scenario traffic remains essentially flat, so week-over-week reads should be validated with graders before drawing conclusions."
+      "Positive response eases off ceiling and planner time lengthens meaningfully versus last week, which may be worth a qualitative spot-check with scenario graders."
     ],
     "issueAttention": []
   },
   "SDR Scenario 3": {
     "good": [
-      "Conciseness appears broadly steady and negative response rate remains at zero on this scenario footprint."
+      "Conciseness appears broadly steady and negative response rate remains essentially at zero on this scenario footprint."
     ],
     "bad": [
-      "Relevancy appears softer than last week—worth a qualitative spot-check with scenario graders before reading more into the move."
+      "Positive response eases meaningfully from near-ceiling levels and planner time lengthens versus last week, which likely warrants a closer review with scenario graders."
     ],
     "issueAttention": []
   },
   "Services Scoping Agent": {
     "good": [
-      "One-week repeat usage appears a touch higher and action time a shade quicker than last week on the rubric slice."
+      "One-week repeat usage and weekly new-user share both appear stronger than last week, and engagement depth ticks up on the rubric slice."
     ],
     "bad": [
-      "Engagement depth and weekly new-user share both appear meaningfully softer than the prior week, which may warrant a closer review of how typical users are engaging."
+      "Answer relevancy appears meaningfully softer than last week and planner time lengthens, which may be worth a qualitative spot-check before reading more into the move."
     ],
     "issueAttention": []
   },
   "V2MOM_Agent": {
     "good": [
-      "Action time appears noticeably quicker and one-week repeat usage a touch stronger than last week on the rubric aggregate."
+      "Negative response rate and reprompt pressure both appear meaningfully lighter than last week, with positive response also ticking higher on the rubric slice."
     ],
     "bad": [
-      "Negative response rate and reprompt pressure both appear meaningfully higher than the prior week, signals that likely belong in the same review."
+      "Action time appears sharply longer than the prior week and one-week repeat usage softens, signals that likely belong in the same review."
     ],
     "issueAttention": []
   },
   "Wellbeing Agent": {
     "good": [
-      "Reprompt pressure appears noticeably lighter than last week on the rubric slice."
+      "Negative response rate appears a touch lower and conciseness edges up modestly versus last week on the rubric slice."
     ],
     "bad": [
-      "Relevancy appears meaningfully softer than last week, and regression hints that lifting helpfulness or teachability may travel with lower reprompts—worth a calm review before acting."
+      "Answer relevancy appears meaningfully softer than last week and planner time lengthens, and regression hints that lifting helpfulness or teachability may travel with lower reprompts\u2014worth a calm review before acting."
     ],
     "issueAttention": []
   },
   "www.salesforce.com": {
     "good": [
-      "Planner time appears a touch quicker than last week while negative response rate and positive response both hold steady."
+      "Reprompt rate appears a touch lighter and conciseness holds broadly steady versus last week on a stable volume base."
     ],
     "bad": [
-      "Reprompt rate appears to nudge up while relevancy eases slightly, which may be worth watching before it shows up elsewhere."
+      "Positive response eases and answer relevancy softens versus last week while planner time lengthens, and regression hints that improving conciseness could also be linked to lower negative response\u2014worth leaning into as quality signals soften."
     ],
     "issueAttention": [
-      "Issues: sessions that hit a backend error appear to return more negative response and substantially more reprompts than healthy ones, so reducing the top recurring action failures could help protect tone and reprompt trends."
+      "Issues: sessions that hit a backend error appear to return substantially more negative response and slower latency than healthy ones, so reducing the top recurring action failures could help protect tone and response-time trends."
     ]
   }
 }
@@ -1936,104 +1924,108 @@
     <script type="application/json" id="c0-agent-hover-bundled">
 {
   "Account Success Employee Agent": {
-    "keyStrengthHover": "Compared with the previous run, positive response improved from 74.0% to 80.2% (+6.2pp), re-prompt rate improved from 7.3% to 5.5% (-1.8pp), and engagement depth improved from 15.6% to 22.6% (+7.0pp); for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, one-week repeat usage declined from 28.6% to 26.4% (-2.3pp) and weekly new-user share declined from 6.3% to 4.3% (-2.0pp), and Issue Diagnosis suggests error sessions show meaningfully more re-prompts than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
+    "keyStrengthHover": "Compared with the previous run, one-week repeat usage held essentially flat at ~26.5% (+0.1pp) while monthly active users edged up from 1,088 to 1,294 (+206); for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response declined from 80.4% to 70.2% (-10.2pp), negative response rate rose from 25.4% to 28.2% (+2.8pp), and answer relevancy eased from 0.953 to 0.728, and Issue Diagnosis suggests error sessions show ~+26.7pp more reprompts and ~+14pp more missing-info responses than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
   },
   "Agentforce Sales Development Rep Agent2 Score2": {
-    "keyStrengthHover": "Compared with the previous run, conciseness held steady at ~8.87/10 and negative response rate remained at 0%, suggesting the training-style footprint stayed clean week-over-week; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, answer relevancy eased slightly from 0.947 to 0.940 and planner duration increased from 7.67s to 7.82s, so the move is likely best read as directional until traffic returns; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, conciseness held steady near 8.86/10 and negative response rate remained at 0%, suggesting the training-style footprint stayed clean; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response declined from 100% to 91.5% (-8.5pp), planner duration lengthened from 7.82s to 20.59s (+12.8s), and answer relevancy eased from 0.940 to 0.863, and Regression suggests that pushing teachability further may also be linked to slower planner time; for more detail, look in Rubric trends and Regression."
   },
   "Analytics Agent Org62": {
-    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 5.2% to 2.9% (-2.3pp), positive response improved from 95.4% to 98.4% (+3.0pp), and planner duration eased from 4.05s to 3.48s; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, conciseness declined from 8.77 to 8.25 and action duration rose from 13.27s to 13.99s, and Issue Diagnosis suggests error sessions show ~40.7pp more re-prompts than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
+    "keyStrengthHover": "Compared with the previous run, re-prompt rate improved from 8.5% to 4.8% (-3.7pp), positive response improved from 97.2% to 97.7% (+0.4pp), and negative response rate eased from 2.85% to 2.40% (-0.5pp); for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, action duration lengthened from 13.99s to 32.06s (+18.1s) and conciseness eased from 8.25 to 7.98, and Issue Diagnosis suggests error sessions show ~0.2 points lower answer relevancy than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
   },
   "Badgeforce Agent": {
-    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 26.0% to 21.9% (-4.1pp), re-prompt rate improved from 2.3% to 1.0% (-1.3pp), and planner duration eased from 4.05s to 3.71s; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, positive response declined from 83.0% to 79.9% (-3.1pp), and Regression suggests that pushing answer relevancy further may also be linked to slower action duration; for more detail, look in Rubric trends and Regression."
+    "keyStrengthHover": "Compared with the previous run, re-prompt rate held broadly steady near 1.0% (-0.02pp) and monthly active users rose from 1,029 to 1,132 (+103) on the rubric slice; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, negative response rate rose from 21.9% to 32.0% (+10.2pp), positive response declined from 78.6% to 73.6% (-5.0pp), and engagement depth dropped from 41.7% to 11.9% (-29.8pp), and Regression suggests that pushing answer relevancy further may also be linked to slower action duration; for more detail, look in Rubric trends and Regression."
   },
   "Customer Support Voice Agent": {
-    "keyStrengthHover": "Compared with the previous run, answer relevancy improved slightly from 0.938 to 0.945 and conciseness held steady around 8.49/10, suggesting core quality is holding on a narrow rubric base; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, positive response declined from 78.1% to 74.2% (-3.9pp) and negative response rate rose from 5.8% to 6.6% (+0.8pp), and Regression suggests that pushing conciseness further may also be linked to more re-prompts; for more detail, look in Rubric trends and Regression."
+    "keyStrengthHover": "Compared with the previous run, negative response rate eased from 6.6% to 5.0% (-1.6pp) on this narrow voice rubric slice; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, answer relevancy declined from 0.945 to 0.690 and re-prompt rate nudged up from 6.8% to 7.5% (+0.6pp), and Regression suggests that pushing conciseness further may also be linked to more re-prompts; for more detail, look in Rubric trends and Regression."
   },
   "Emp Data Agent": {
-    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 8.1% to 1.8% (-6.3pp), re-prompt rate improved from 5.4% to 0.0% (-5.4pp), and positive response improved from 93.0% to 100% (+7.0pp); for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, planner duration lengthened from 4.14s to 6.01s (+1.9s) and monthly active users eased from 172 to 138, so the timing move likely warrants a quick review; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, weekly new-user share improved from 26.8% to 42.9% (+16.0pp) and engagement depth improved from 16.1% to 20.5% (+4.4pp), suggesting a healthier top-of-funnel picture on the slice; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, negative response rate rose from 1.8% to 3.6% (+1.8pp) and positive response eased from 98.3% to 94.8% (-3.5pp), which may be worth a qualitative spot-check given the small sample; for more detail, look in the agent-level Rubric trends."
   },
   "Employee Agent": {
-    "keyStrengthHover": "Compared with the previous run, monthly active users edged up from 12,834 to 13,093 and weekly new-user share improved from 8.9% to 9.4% (+0.5pp), suggesting the top of the funnel is holding up; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, one-week repeat usage declined from 25.2% to 22.2% (-2.9pp) and action duration rose from 6.07s to 7.19s (+1.1s), and Issue Diagnosis suggests error sessions show more missing-info responses and more re-prompts than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
+    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 11.7% to 10.7% (-0.9pp), re-prompt rate improved from 1.07% to 0.86% (-0.2pp), and monthly active users held up near ~13,000; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response declined from 90.4% to 86.6% (-3.8pp), action duration lengthened from 7.19s to 16.58s (+9.4s), and answer relevancy eased from 0.946 to 0.796, and Issue Diagnosis suggests error sessions show ~+8pp more reprompts than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
   },
   "Extended Outreach - Agent 1": {
-    "keyStrengthHover": "Compared with the previous run, negative response rate eased from 0.09% to 0.00% and answer relevancy held steady near 0.958, suggesting this automation footprint stayed clean week-over-week; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, planner duration lengthened from 8.99s to 9.61s (+0.6s), which may be worth a quick pass to separate thinking time from orchestration overhead; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, negative response rate held at 0% and re-prompt rate stayed at 0% on this outreach automation footprint; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, planner duration lengthened from 9.61s to 21.61s (+12.0s) and positive response eased from 100% to 94.9% (-5.1pp), which may be worth a quick pass to separate thinking time from orchestration overhead; for more detail, look in the agent-level Rubric trends."
   },
   "Extended Outreach - Agent 2": {
-    "keyStrengthHover": "Compared with the previous run, action duration eased from 6.03s to 5.89s and positive response held near ceiling around 99.5%, suggesting the experience stayed healthy on this automation footprint; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, planner duration lengthened from 9.07s to 9.61s (+0.5s) and conciseness eased from 9.48 to 9.34, and Issue Diagnosis suggests error sessions run noticeably slower than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
+    "keyStrengthHover": "Compared with the previous run, re-prompt rate stayed at 0% and negative response rate remained very low at ~0.06%, suggesting the experience stayed clean on this automation footprint; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, planner duration lengthened from 9.61s to 24.02s (+14.4s), action duration lengthened from 5.89s to 14.06s (+8.2s), and positive response eased from 99.5% to 93.6% (-5.8pp), and Regression suggests that lifting teachability or helpfulness may travel with slower planner time; for more detail, look in Rubric trends and Regression."
   },
   "help.salesforce.com": {
-    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 6.1% to 5.4% (-0.7pp), positive response improved from 89.7% to 90.6% (+0.9pp), and planner duration eased from 4.77s to 4.54s; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, answer relevancy eased from 0.948 to 0.939 (-0.9pp), and Issue Diagnosis suggests error sessions show ~+8.1pp more negative response, ~+15.3pp more re-prompts, and ~-11.1pp less positive response than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
+    "keyStrengthHover": "Compared with the previous run, conciseness ticked up from 6.72 to 6.79 (+0.07) and re-prompt rate held broadly steady near 4.58% on a stable volume base; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, answer relevancy declined from 0.939 to 0.785, positive response eased from 90.7% to 87.3% (-3.3pp), and planner duration lengthened from 4.54s to 11.44s (+6.9s), and Issue Diagnosis suggests error sessions show ~-8.6pp less positive response, ~+10.5pp more reprompts, and ~+7.4pp more missing-info responses than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
   },
   "Internal Partner Agent": {
-    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 0.87% to 0.15% (-0.7pp) and answer relevancy improved from 0.946 to 0.962 (+1.6pp), suggesting a cleaner experience on a very narrow base; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, conciseness declined from 8.50 to 7.67 (-0.83), which may be worth a qualitative review before drawing broader conclusions; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, re-prompt rate eased from 0.29% to 0.14% (-0.15pp) and monthly active users ticked from 1 to 2 on a very narrow base; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response declined from 99.9% to 91.1% (-8.7pp), answer relevancy eased from 0.962 to 0.863, and conciseness declined from 7.67 to 7.36 (-0.31), which may be worth a qualitative review before drawing broader conclusions; for more detail, look in the agent-level Rubric trends."
   },
   "Manager Agent": {
-    "keyStrengthHover": "Compared with the previous run, positive response improved from 93.5% to 94.9% (+1.4pp) and negative response rate improved from 4.3% to 3.7% (-0.7pp), suggesting a friendlier tone on the rubric aggregate; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, one-week repeat usage declined sharply from 30.5% to 20.3% (-10.2pp) and monthly active users eased from 1,962 to 1,796, and Issue Diagnosis suggests error sessions show far more missing-info responses than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
+    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 3.67% to 3.48% (-0.19pp), one-week repeat usage ticked up from 20.3% to 21.9% (+1.6pp), and conciseness improved from 4.78 to 5.00 (+0.22); for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response declined from 94.8% to 87.0% (-7.8pp), answer relevancy eased from 0.947 to 0.871, and action duration rose from 2.33s to 5.47s (+3.1s), and Issue Diagnosis suggests error sessions run ~42.3 sec slower than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
   },
   "Multi Event Agent": {
-    "keyStrengthHover": "Compared with the previous run, planner duration eased from 6.46s to 5.69s and positive response ticked up from 99.16% to 99.53%, suggesting steady, healthy performance on light volume; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, re-prompt rate edged up from 0.01% to 0.13% on very light traffic, and Issue Diagnosis suggests error sessions show meaningfully less positive response and more missing-info answers than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
+    "keyStrengthHover": "Compared with the previous run, conciseness held broadly steady around 8.15/10 and re-prompt rate stayed very light near 0.30%, suggesting the event-driven slice stayed clean; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, negative response rate rose from 0.49% to 2.77% (+2.3pp), positive response eased from 99.4% to 89.9% (-9.5pp), and planner duration lengthened from 5.69s to 12.56s (+6.9s), and Issue Diagnosis suggests error sessions show ~+15.5pp more negative response than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
   },
   "Product Growth Agent": {
-    "keyStrengthHover": "Compared with the previous run, re-prompt rate improved from 3.9% to 1.5% (-2.4pp), engagement depth improved from 17.8% to 22.6% (+4.8pp), and the habit metric improved from 10.5% to 13.0% (+2.5pp); for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, one-week repeat usage declined from 36.1% to 22.8% (-13.3pp), monthly active users eased from 223 to 153, and weekly new-user share declined from 22.8% to 15.2% (-7.6pp); for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, re-prompt rate improved from 1.5% to 0.0% (-1.5pp), positive response improved from 93.1% to 95.7% (+2.5pp), and weekly new-user share improved from 15.2% to 34.1% (+18.9pp); for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, one-week repeat usage declined from 22.8% to 19.6% (-3.2pp), engagement depth declined from 22.6% to 9.6% (-13.0pp), and the habit metric declined from 13.0% to 7.3% (-5.7pp); for more detail, look in the agent-level Rubric trends."
   },
   "Product Led Growth Agent": {
-    "keyStrengthHover": "Compared with the previous run, conciseness held steady around 8.58/10 and re-prompt rate remained at 0% with negative response rate still very low (~0.76%), suggesting the slice stayed clean; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, answer relevancy eased from 1.00 to 0.93 (-7pp), and Regression suggests that pushing conciseness further may also be linked to slower planner time; for more detail, look in Rubric trends and Regression."
+    "keyStrengthHover": "Compared with the previous run, positive response held at 100% and re-prompt rate remained at 0%, with negative response rate easing from 0.76% to 0.00% (-0.8pp) on a narrow rubric slice; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, answer relevancy eased from 0.929 to 0.897 (-3.1pp) and action duration lengthened from 5.70s to 8.33s (+2.6s), and Chemistry hints that decisiveness and helpfulness tend to move together here\u2014so relevancy changes likely need a calm review; for more detail, look in Rubric trends and Chemistry."
   },
   "Sales Agent": {
-    "keyStrengthHover": "Compared with the previous run, positive response improved from 62.6% to 66.6% (+4.0pp), one-week repeat usage improved from 31.0% to 34.9% (+3.9pp), and engagement depth improved from 10.6% to 13.5% (+2.9pp); for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, the habit metric declined from 15.3% to 10.1% (-5.2pp), answer relevancy eased from 0.956 to 0.939, and Regression suggests that lifting teachability may also travel with lower negative response—so quality gains likely need an adoption story; for more detail, look in Rubric trends and Regression."
+    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 3.32% to 3.14% (-0.18pp), re-prompt rate improved from 3.78% to 3.58% (-0.2pp), and weekly new-user share improved from 20.7% to 23.9% (+3.2pp); for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, one-week repeat usage declined from 34.9% to 27.5% (-7.4pp), engagement depth declined from 13.4% to 7.0% (-6.4pp), and answer relevancy eased from 0.939 to 0.796, and Regression suggests that lifting teachability may also travel with lower negative response\u2014so quality gains likely need an adoption story; for more detail, look in Rubric trends and Regression."
   },
   "Sales Coach": {
-    "keyStrengthHover": "Compared with the previous run, positive response held at 100% and negative response rate remained at 0%, suggesting sentiment stayed clean on the rubric slice; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, answer relevancy declined from 0.947 to 0.895 (-5.2pp) and weekly new-user share eased from 41.1% to 30.8%, which may be worth a qualitative spot-check; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, weekly new-user share improved from 30.8% to 72.1% (+41.3pp) and monthly active users grew from 272 to 399 (+127) as the coach slice expanded; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, negative response rate rose from 0.0% to 4.95% (+5.0pp) and positive response eased from 100% to 96.2% (-3.8pp) as sessions grew from 16 to 101, so the move is likely best treated as an early-signal spot-check; for more detail, look in the agent-level Rubric trends."
   },
   "SDR": {
-    "keyStrengthHover": "Compared with the previous run, conciseness held steady around 8.76/10 and negative response rate remained at 0%, suggesting core quality stayed consistent; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, answer relevancy eased from 0.963 to 0.954 and traffic remained too light for firm portfolio comparisons, so reads are best treated as directional; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, conciseness held essentially flat at ~8.76/10 and negative response rate remained at 0%, suggesting core quality stayed consistent on this scenario footprint; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response declined from 100% to 91.5% (-8.5pp), planner duration lengthened from 7.55s to 18.72s (+11.2s), and answer relevancy eased from 0.954 to 0.870; for more detail, look in the agent-level Rubric trends."
   },
   "SDR Japan Scenario1": {
-    "keyStrengthHover": "Compared with the previous run, positive response held at 100% and negative response rate remained at 0%, suggesting this training footprint stayed clean; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, answer relevancy eased from 1.00 to 0.944 on near-zero headline volume, so the move is likely best read as directional only; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, negative response rate held at 0% and answer relevancy held essentially flat near 0.948 on this training-style footprint; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, planner duration lengthened from 7.76s to 17.23s (+9.5s) and action duration lengthened from 4.12s to 8.76s (+4.6s) as sessions grew from 79 to 1,580, which likely warrants a closer look with scenario graders; for more detail, look in the agent-level Rubric trends."
+  },
+  "SDR Japan Scenario2": {
+    "keyStrengthHover": "Compared with the previous run (2026-04-04), positive response held at 100% and negative response rate remained at 0% on an extremely thin rubric slice; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run (2026-04-04), scenario volume collapsed from 189 to 4 sessions and answer relevancy eased from 0.976 to 0.727, so reads here are likely best treated as directional only; for more detail, look in the agent-level Rubric trends."
   },
   "SDR Scenario 1": {
-    "keyStrengthHover": "Compared with the previous run, answer relevancy ticked up from 0.9525 to 0.9541 and conciseness held steady at 8.85/10 with negative response rate near 0%, suggesting the scenario slice stayed stable; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Scenario traffic remained essentially flat week-over-week with no meaningful rubric mover, so any small shifts likely need validation with graders before reading more into them; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, conciseness held essentially flat at 8.85/10 and negative response rate remained near 0% on this scenario footprint; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response declined from 100% to 92.1% (-7.9pp), planner duration lengthened from 7.79s to 20.17s (+12.4s), and answer relevancy eased from 0.954 to 0.868, which may be worth a qualitative spot-check with scenario graders; for more detail, look in the agent-level Rubric trends."
   },
   "SDR Scenario 3": {
-    "keyStrengthHover": "Compared with the previous run, conciseness held steady around 8.80/10 and negative response rate remained at 0%, suggesting the scenario slice stayed stable; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, answer relevancy eased from 0.959 to 0.934 (-2.5pp), which may be worth a qualitative spot-check with scenario graders; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, conciseness held steady around 8.78/10 and negative response rate remained essentially at 0% on this scenario footprint; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response eased from 99.97% to 91.64% (-8.3pp), planner duration lengthened from 7.77s to 18.90s (+11.1s), and answer relevancy eased from 0.934 to 0.875; for more detail, look in the agent-level Rubric trends."
   },
   "Services Scoping Agent": {
-    "keyStrengthHover": "Compared with the previous run, one-week repeat usage improved from 13.6% to 16.7% (+3.0pp) and action duration eased from 0.27s to 0.04s, suggesting a slightly friendlier slice this week; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, engagement depth declined sharply from 25.0% to 0.0% (-25pp) and weekly new-user share eased from 27.8% to 18.8% (-9.0pp), which likely warrants a closer review of how typical users are engaging; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, one-week repeat usage improved from 16.7% to 18.8% (+2.1pp), weekly new-user share improved from 18.8% to 31.3% (+12.5pp), and engagement depth improved from 0.0% to 3.9% (+3.9pp); for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, answer relevancy eased from 0.961 to 0.837 and planner duration lengthened from 1.04s to 3.01s (+2.0s), which may be worth a qualitative spot-check before reading more into the move; for more detail, look in the agent-level Rubric trends."
   },
   "V2MOM_Agent": {
-    "keyStrengthHover": "Compared with the previous run, action duration eased from 10.39s to 9.17s (-1.2s) and one-week repeat usage ticked up from 0.8% to 2.6%, suggesting a slightly quicker, stickier week; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, negative response rate rose from 5.1% to 8.2% (+3.1pp) and re-prompt rate rose from 5.7% to 8.5% (+2.8pp), signals that likely belong in the same review; for more detail, look in the agent-level Rubric trends."
+    "keyStrengthHover": "Compared with the previous run, negative response rate improved from 8.2% to 7.6% (-0.6pp), re-prompt rate improved from 8.5% to 4.0% (-4.5pp), and positive response improved from 87.6% to 89.7% (+2.0pp); for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, action duration lengthened from 9.17s to 28.55s (+19.4s) and one-week repeat usage declined from 2.6% to 0.0% (-2.6pp), signals that likely belong in the same review; for more detail, look in the agent-level Rubric trends."
   },
   "Wellbeing Agent": {
-    "keyStrengthHover": "Compared with the previous run, re-prompt rate improved from 2.5% to 0.5% (-2.1pp), suggesting a lighter friction footprint on the rubric slice; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, answer relevancy eased from 0.962 to 0.918 (-4.4pp), and Regression suggests that lifting helpfulness or teachability may travel with lower re-prompts—worth a calm review; for more detail, look in Rubric trends and Regression."
+    "keyStrengthHover": "Compared with the previous run, negative response rate eased from 4.6% to 3.4% (-1.2pp) and conciseness ticked up from 6.48 to 6.59 (+0.11) on the rubric slice; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, answer relevancy declined from 0.918 to 0.818 and planner duration lengthened from 4.97s to 10.27s (+5.3s), and Regression suggests that lifting helpfulness or teachability may travel with lower re-prompts\u2014worth a calm review; for more detail, look in Rubric trends and Regression."
   },
   "www.salesforce.com": {
-    "keyStrengthHover": "Compared with the previous run, planner duration eased from 3.62s to 3.43s while negative response rate held steady near 7.14% and positive response near 89.6%, suggesting the experience stayed broadly stable; for more detail, look in the agent-level Rubric trends.",
-    "attentionNeededHover": "Compared with the previous run, re-prompt rate nudged up from 1.74% to 2.03% and answer relevancy eased slightly from 0.955 to 0.952, and Issue Diagnosis suggests error sessions show ~+9.4pp more negative response and ~+15.9pp more re-prompts than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
+    "keyStrengthHover": "Compared with the previous run, re-prompt rate eased slightly from 2.03% to 1.87% (-0.2pp) and conciseness held broadly steady near 6.86/10 on a stable volume base; for more detail, look in the agent-level Rubric trends.",
+    "attentionNeededHover": "Compared with the previous run, positive response declined from 89.5% to 85.2% (-4.3pp), answer relevancy eased from 0.952 to 0.816, and planner duration lengthened from 3.43s to 8.90s (+5.5s), and Issue Diagnosis suggests error sessions show ~+35.9pp more negative response and run ~3.8 sec slower than healthy ones; for more detail, look in Rubric trends and Issue Diagnosis."
   }
 }
     </script>
@@ -2375,12 +2367,7 @@
         heading.className = "agent-summary-rail__heading";
         heading.id = "c0-agent-summary-rail-heading";
         heading.textContent = "AI-Curated Performance Narrative";
-        const sub = document.createElement("div");
-        sub.className = "agent-summary-rail__sub";
-        sub.textContent =
-          "Automated insights synthesized from agent engagement and quality signals";
         titleGroup.appendChild(heading);
-        titleGroup.appendChild(sub);
         header.appendChild(iconWrap);
         header.appendChild(titleGroup);
         return header;
